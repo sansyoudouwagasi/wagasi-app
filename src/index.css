@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: theme('colors.washi');
+    color: theme('colors.sumi');
+    font-family: theme('fontFamily.sans');
+  }
+  
+  /* 和風の美しいスクロールバー（オプション） */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent; 
+  }
+  ::-webkit-scrollbar-thumb {
+    background: theme('colors.matcha.200'); 
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.matcha.300'); 
+  }
+}

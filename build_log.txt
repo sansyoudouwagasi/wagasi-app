@@ -1,0 +1,3 @@
+Reading Excel file: C:\Users\going\OneDrive\繝峨く繝･繝｡繝ｳ繝・譬・､頑・蛻・B\20260327-mxt_kagsei-mext-000029402_02.xlsx
+Indices -> Kcal: 6, Prot: 9, Fat: 12, Carb: 20, Salt: 60
+Successfully extracted 2538 food items to C:\Users\going\OneDrive\繝峨く繝･繝｡繝ｳ繝・譬・､頑・蛻・B\wagashi-app\src\data\mext_data.json

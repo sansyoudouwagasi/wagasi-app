@@ -259,7 +259,7 @@ export default function App() {
   }, [ingredients, recipeName, addedWater, servings, totals, per100g, perOne, rawTotalWeight, finalWeight, yieldWeight]);
 
   return (
-    <div className="min-h-screen bg-washi text-sumi pb-24 font-sans">
+    <div className="min-h-screen bg-washi text-sumi pb-36 font-sans">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-matcha-100 px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-2">
@@ -269,27 +269,17 @@ export default function App() {
           <h1 className="font-serif font-bold text-lg tracking-wider text-matcha-900 hidden sm:block">和菓子栄養計算</h1>
         </div>
         <div className="flex gap-2">
-          <button 
-            type="button"
-            onClick={() => setShowLoadModal(true)}
-            className="bg-white border border-matcha-200 text-matcha-700 hover:bg-matcha-50 px-3 sm:px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 active:scale-95 transition-all shadow-sm"
-          >
-            <FolderOpen size={16} /> <span className="hidden sm:inline">呼出</span>
-          </button>
-          <button 
-            type="button"
-            onClick={openSaveModal}
-            className="bg-azuki-600 hover:bg-azuki-700 text-white px-3 sm:px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 active:scale-95 transition-all shadow-sm"
-          >
-            <Save size={16} /> <span className="hidden sm:inline">保存</span>
-          </button>
+          {/* Action buttons moved to bottom footer */}
         </div>
       </header>
 
       {statusMessage && (
-        <div className="fixed top-20 left-4 right-4 z-40 animate-in fade-in slide-in-from-top-4 pointer-events-none">
-          <div className="bg-matcha-800/90 backdrop-blur-sm text-white px-4 py-3 rounded-2xl text-center text-sm font-medium shadow-xl flex items-center justify-center gap-2 border border-matcha-700 max-w-sm mx-auto">
-            <Info size={16} className="text-matcha-300" /> {statusMessage}
+        <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-sumi/90 backdrop-blur-md text-white px-8 py-6 rounded-[2rem] text-center shadow-2xl flex flex-col items-center gap-3 border border-gray-700 max-w-sm mx-auto">
+            <div className="bg-matcha-500 text-white p-3 rounded-full mb-2">
+              <Info size={32} />
+            </div>
+            <span className="text-xl font-serif font-bold tracking-wider">{statusMessage}</span>
           </div>
         </div>
       )}
@@ -575,6 +565,28 @@ export default function App() {
           )}
         </button>
       </main>
+
+      {/* Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-matcha-100 z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="max-w-md mx-auto grid grid-cols-2 gap-3">
+          <button 
+            type="button"
+            onClick={() => setShowLoadModal(true)}
+            className="flex flex-col items-center justify-center bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 py-3 rounded-2xl shadow-sm active:scale-95 transition-all group shrink-0"
+          >
+            <FolderOpen size={24} className="mb-0.5 group-hover:scale-110 transition-transform" />
+            <span className="text-[12px] font-bold w-full text-center">保存したレシピを開く</span>
+          </button>
+          <button 
+            type="button"
+            onClick={openSaveModal}
+            className="flex flex-col items-center justify-center bg-matcha-600 hover:bg-matcha-700 border border-matcha-700 text-white py-3 rounded-2xl shadow-md active:scale-95 transition-all group shrink-0"
+          >
+            <Save size={24} className="mb-0.5 group-hover:scale-110 transition-transform" />
+            <span className="text-[12px] font-bold w-full text-center">レシピを保存</span>
+          </button>
+        </div>
+      </div>
 
       {/* Save Modal */}
       {showSaveModal && (

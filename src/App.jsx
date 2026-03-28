@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star, Droplets, FileDown } from "lucide-react";
+import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star, Droplets, FileDown, HelpCircle } from "lucide-react";
 import mextData from "./data/mext_data.json";
 import { expandSearchQuery } from "./utils/searchUtils";
 import { exportRecipePdf } from "./utils/pdfExport";
@@ -22,6 +22,8 @@ export default function App() {
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [newCustom, setNewCustom] = useState({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "" });
+
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   // 歩留まり（完成重量）用
   const [yieldWeight, setYieldWeight] = useState("");
@@ -342,7 +344,14 @@ export default function App() {
           <h1 className="font-serif font-bold text-lg tracking-wider text-matcha-900 hidden sm:block">和菓子栄養計算</h1>
         </div>
         <div className="flex gap-2">
-          {/* Action buttons moved to bottom footer */}
+          <button 
+            type="button" 
+            onClick={() => setShowHelpModal(true)} 
+            className="flex items-center gap-1.5 p-2 bg-white hover:bg-matcha-50 text-matcha-600 rounded-full transition-colors border border-matcha-100 shadow-sm pr-3"
+          >
+            <HelpCircle size={20} />
+            <span className="text-xs font-bold">使い方</span>
+          </button>
         </div>
       </header>
 
@@ -822,6 +831,75 @@ export default function App() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div className="fixed inset-0 z-[100] flex animate-in fade-in bg-sumi/60 backdrop-blur-sm p-4 sm:p-6 sm:items-center sm:justify-center">
+          <div className="bg-washi w-full max-w-lg rounded-[2rem] shadow-2xl border border-matcha-100 flex flex-col max-h-full sm:max-h-[85vh] overflow-hidden relative">
+            <div className="p-5 border-b border-matcha-100 flex justify-between items-center bg-white/50 shrink-0">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="text-matcha-600" size={24} />
+                <h3 className="font-serif font-bold text-xl text-matcha-900">使い方ガイド</h3>
+              </div>
+              <button type="button" onClick={() => setShowHelpModal(false)} className="text-gray-400 hover:text-sumi p-1 bg-white hover:bg-matcha-50 rounded-full transition-colors shadow-sm"><X size={20}/></button>
+            </div>
+            
+            <div className="overflow-y-auto p-5 space-y-6 custom-scrollbar flex-1 bg-washi/50">
+              {/* 基本の使い方 */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-matcha-800 flex items-center gap-2 text-sm">
+                  <span className="bg-matcha-100 text-matcha-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
+                  材料を選ぶ
+                </h4>
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-matcha-50 text-sm font-sans text-sumi leading-relaxed">
+                  <p>「和菓子の材料を検索」窓に「あずき」等を入力し、リストから追加します。その後、使用するグラム数を入力すると自動的に成分が計算されます。</p>
+                </div>
+              </div>
+
+              {/* マイ材料とレシピ連携 */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-orange-700 flex items-center gap-2 text-sm">
+                  <span className="bg-orange-100 text-orange-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> 
+                  レシピの「材料化」と連携
+                </h4>
+                <div className="bg-orange-50/50 p-4 rounded-2xl shadow-sm border border-orange-100 text-sm font-sans text-sumi leading-relaxed">
+                  <p>完成したレシピ（例：自家製あんこ）を保存する時に<strong>「マイ材料として登録」</strong>にチェックを入れると、100gあたりの成分が材料として保存されます。</p>
+                  <p className="mt-2 text-[11px] font-bold text-orange-800 bg-orange-100 p-2.5 rounded-xl border border-orange-200">
+                    💡 後から「自家製あんこ」のレシピ内容を修正・保存すると、それを使っている別の和菓子レシピも自動的に最新の成分へと一括更新（連動）されるか、システムが確認を出してくれます。
+                  </p>
+                </div>
+              </div>
+
+              {/* 歩留まり・加水量 */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-blue-700 flex items-center gap-2 text-sm">
+                  <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span> 
+                  加水と歩留まり（完成重量）
+                </h4>
+                <div className="bg-blue-50/50 p-4 rounded-2xl shadow-sm border border-blue-100 text-sm font-sans text-sumi leading-relaxed">
+                  <ul className="space-y-3">
+                    <li><strong className="text-blue-800 border-b border-blue-200 pb-0.5">加水量：</strong><br/>炊く前の水など、加熱前に生重量へ足される水分です。</li>
+                    <li><strong className="text-blue-800 border-b border-blue-200 pb-0.5">完成後の総重量：</strong><br/>煮詰めた後などの最終的な重量（歩留まり）です。入力するとより正確に100gあたりの成分を算出します（水分の蒸発等を考慮）。</li>
+                  </ul>
+                  <p className="mt-2 text-[11px] font-bold text-blue-800 bg-blue-100 p-2.5 rounded-xl border border-blue-200">
+                    💡 計算結果エリアの右上「1個あたり/100gあたり」ボタンで表示を切り替えられます。
+                  </p>
+                </div>
+              </div>
+
+              {/* 保存と出力 */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-matcha-800 flex items-center gap-2 text-sm">
+                  <span className="bg-matcha-100 text-matcha-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span> 
+                  保存とPDF帳票
+                </h4>
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-matcha-50 text-sm font-sans text-sumi leading-relaxed">
+                  <p>画面下部のフッターメニューから、レシピをローカル（ブラウザ内）へ保存・呼び出しができます。<br />画面最下部の「PDF形式で保存」を押すと、きれいな印刷用の成分一覧PDFがダウンロードされます。</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -477,68 +477,47 @@ export default function App() {
         </div>
 
         {/* 結果表示 */}
-        <div className="bg-sumi rounded-[2.5rem] p-8 text-washi shadow-lg shadow-matcha-900/10 space-y-8 relative overflow-hidden border border-sumi z-0">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-matcha-900/40 rounded-full -mr-20 -mt-20 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-azuki-900/30 rounded-full -ml-16 -mb-16 blur-2xl" />
+        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-matcha-100 space-y-5 relative z-0">
           
-          <div className="flex justify-between items-start relative z-10">
-            <div>
-              <p className="text-matcha-300 text-[11px] font-sans font-bold tracking-[0.2em] mb-1">全体カロリー</p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-5xl font-serif font-black tabular-nums tracking-tighter">{totals.kcal.toFixed(0)}</span>
-                <span className="text-matcha-400 font-sans font-bold text-sm">kcal</span>
-              </div>
-            </div>
-            <div className="text-right flex flex-col items-end">
-              <div className="bg-gray-800 rounded-lg p-0.5 flex gap-1 mb-2 border border-gray-700">
-                <button 
-                  onClick={() => setDisplayMode("perPiece")}
-                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${displayMode === "perPiece" ? "bg-matcha-600 text-white" : "text-gray-400 hover:text-white"}`}
-                >
-                  1個あたり
-                </button>
-                <button 
-                  onClick={() => setDisplayMode("per100g")}
-                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${displayMode === "per100g" ? "bg-matcha-600 text-white" : "text-gray-400 hover:text-white"}`}
-                >
-                  完成品100g
-                </button>
-              </div>
-              <div className="flex items-baseline gap-1 justify-end">
-                <span className="text-3xl font-serif font-black tabular-nums text-white">{displayData.kcal.toFixed(0)}</span>
-                <span className="text-sakura-300 text-xs font-sans font-bold">kcal</span>
-              </div>
+          <div className="flex items-center justify-between">
+            <h3 className="font-serif font-black text-matcha-900 text-lg">栄養成分</h3>
+            <div className="bg-washi rounded-xl p-1 flex gap-1 border border-matcha-100 shadow-inner">
+              <button 
+                onClick={() => setDisplayMode("perPiece")}
+                className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${displayMode === "perPiece" ? "bg-white text-matcha-700 shadow-sm border border-matcha-100" : "text-matcha-400 hover:text-matcha-600"}`}
+              >
+                1個あたり
+              </button>
+              <button 
+                onClick={() => setDisplayMode("per100g")}
+                className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${displayMode === "per100g" ? "bg-white text-matcha-700 shadow-sm border border-matcha-100" : "text-matcha-400 hover:text-matcha-600"}`}
+              >
+                100gあたり
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 pt-6 border-t border-gray-700 relative z-10">
-            <NutrientBox label="たんぱく" value={displayData.p} unit="g" color="bg-matcha-500" />
-            <NutrientBox label="脂質" value={displayData.f} unit="g" color="bg-azuki-500" />
-            <NutrientBox label="炭水化物" value={displayData.c} unit="g" color="bg-sakura-500" />
-            <NutrientBox label="食塩相当" value={displayData.s} unit="g" color="bg-gray-400" />
+          {/* エネルギー */}
+          <div className="bg-orange-50 border-2 border-orange-100 rounded-2xl p-6 flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
+            <div className="bg-orange-500 text-white px-5 py-1.5 rounded-full text-xs font-bold tracking-widest mb-3 shadow-sm z-10 w-fit">
+              エネルギー
+            </div>
+            <div className="flex items-baseline gap-1 z-10 text-sumi">
+              <span className="text-6xl font-black tabular-nums tracking-tighter leading-none">{displayData.kcal.toFixed(0)}</span>
+              <span className="text-orange-900/60 font-bold ml-1 text-sm">kcal</span>
+            </div>
+            {/* 全体カロリー表示 */}
+            <div className="mt-4 bg-orange-100/50 px-3 py-1 rounded-full text-[10px] font-bold text-orange-600/80 z-10 border border-orange-200/50">
+              全体（全量）: {totals.kcal.toFixed(0)} kcal
+            </div>
           </div>
 
-          <div className="space-y-3 relative z-10">
-            <div className="flex justify-between items-end">
-              <span className="text-[11px] font-sans font-bold text-matcha-300 tracking-widest">PFC バランス</span>
-              <span className="text-[10px] font-sans font-bold text-washi bg-gray-800 px-2 py-0.5 rounded border border-gray-700">エネルギー比 %</span>
-            </div>
-            <div className="h-3.5 w-full bg-gray-800 rounded-full flex overflow-hidden ring-2 ring-gray-800/50">
-              <div className="bg-matcha-500 h-full" style={{ width: `${(displayData.p * 4 / (displayData.kcal || 1)) * 100}%` }} title="たんぱく質" />
-              <div className="bg-azuki-500 h-full" style={{ width: `${(displayData.f * 9 / (displayData.kcal || 1)) * 100}%` }} title="脂質" />
-              <div className="bg-sakura-500 h-full" style={{ width: `${(displayData.c * 4 / (displayData.kcal || 1)) * 100}%` }} title="炭水化物" />
-            </div>
-            <div className="flex justify-between px-1">
-              <div className="flex items-center gap-1.5 text-[10px] font-sans font-bold text-matcha-200">
-                <div className="w-2.5 h-2.5 rounded-sm bg-matcha-500" /> たんぱく
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-sans font-bold text-matcha-200">
-                <div className="w-2.5 h-2.5 rounded-sm bg-azuki-500" /> 脂質
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-sans font-bold text-matcha-200">
-                <div className="w-2.5 h-2.5 rounded-sm bg-sakura-500" /> 炭水化物
-              </div>
-            </div>
+          {/* 4成分グリッド */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <NutrientCard label="たんぱく質" value={displayData.p} unit="g" bgColor="bg-red-50" borderColor="border-red-100" badgeColor="bg-red-500" textColor="text-red-900/50" />
+            <NutrientCard label="脂質" value={displayData.f} unit="g" bgColor="bg-yellow-50" borderColor="border-yellow-200" badgeColor="bg-yellow-400" textColor="text-yellow-900/50" badgeText="text-yellow-900" />
+            <NutrientCard label="炭水化物" value={displayData.c} unit="g" bgColor="bg-blue-50" borderColor="border-blue-100" badgeColor="bg-blue-500" textColor="text-blue-900/50" />
+            <NutrientCard label="食塩相当量" value={displayData.s} unit="g" bgColor="bg-slate-50" borderColor="border-slate-200" badgeColor="bg-slate-500" textColor="text-slate-900/50" />
           </div>
         </div>
 
@@ -744,16 +723,15 @@ export default function App() {
   );
 }
 
-function NutrientBox({ label, value, unit, color }) {
+function NutrientCard({ label, value, unit, bgColor, borderColor, badgeColor, textColor, badgeText="text-white" }) {
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-center gap-1.5">
-        <div className={`w-1.5 h-1.5 rounded-full ${color}`} />
-        <span className="text-[10px] font-sans font-bold text-matcha-300">{label}</span>
+    <div className={`${bgColor} border-2 ${borderColor} rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm relative`}>
+      <div className={`${badgeColor} ${badgeText} px-4 py-1.5 rounded-full text-[11px] font-bold tracking-widest mb-2 shadow-[0_2px_10px_rgba(0,0,0,0.05)] w-fit`}>
+        {label}
       </div>
-      <div className="flex items-baseline justify-center gap-0.5">
-        <span className="text-lg font-serif font-black tabular-nums">{value.toFixed(1)}</span>
-        <span className="text-[10px] font-sans font-bold text-matcha-400">{unit}</span>
+      <div className="flex items-baseline gap-1 text-sumi">
+        <span className="text-3xl sm:text-4xl font-black tabular-nums leading-none tracking-tight">{value.toFixed(1)}</span>
+        <span className={`${textColor} text-xs font-bold ml-0.5`}>{unit}</span>
       </div>
     </div>
   );

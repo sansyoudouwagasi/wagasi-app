@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star } from "lucide-react";
+import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star, Droplets } from "lucide-react";
 import mextData from "./data/mext_data.json";
 import { expandSearchQuery } from "./utils/searchUtils";
 
@@ -23,6 +23,7 @@ export default function App() {
 
   // 歩留まり（完成重量）用
   const [yieldWeight, setYieldWeight] = useState("");
+  const [addedWater, setAddedWater] = useState(""); // 加水用
   
   // 結果表示の切り替え
   const [displayMode, setDisplayMode] = useState("perPiece"); // "perPiece" | "per100g"
@@ -122,6 +123,7 @@ export default function App() {
           ingredients,
           servings,
           yieldWeight,
+          addedWater,
           updatedAt: Date.now()
         }
       };
@@ -142,6 +144,7 @@ export default function App() {
       setIngredients(recipe.ingredients || []);
       setServings(recipe.servings || 1);
       setYieldWeight(recipe.yieldWeight || "");
+      setAddedWater(recipe.addedWater || "");
       setRecipeName(name);
       setShowLoadModal(false);
       showStatus(`「${name}」を読み込みました`);
@@ -203,7 +206,7 @@ export default function App() {
     return acc;
   }, { kcal: 0, p: 0, f: 0, c: 0, s: 0 });
 
-  const rawTotalWeight = ingredients.reduce((acc, item) => acc + item.amount, 0);
+  const rawTotalWeight = ingredients.reduce((acc, item) => acc + item.amount, 0) + (Number(addedWater) || 0);
   const finalWeight = yieldWeight ? Number(yieldWeight) : rawTotalWeight;
 
   const perOne = {
@@ -378,6 +381,32 @@ export default function App() {
 
         {/* 分量設定 */}
         <div className="bg-white p-5 rounded-3xl border border-matcha-100 shadow-sm space-y-4 relative z-0">
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-50 p-2.5 rounded-xl text-blue-500">
+                <Droplets size={20} />
+              </div>
+              <div>
+                <div className="text-sm font-serif font-bold text-sumi tracking-wide">加水量</div>
+                <div className="text-[10px] text-matcha-500 font-sans leading-tight mt-0.5">生重量（加熱前）に加算されます</div>
+              </div>
+            </div>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                className="w-20 bg-washi border border-matcha-100 rounded-xl py-2 px-2 text-right font-black text-sumi focus:ring-2 focus:ring-blue-400 focus:outline-none focus:border-transparent transition-all placeholder:text-matcha-300"
+                value={addedWater}
+                onChange={(e) => setAddedWater(e.target.value)}
+              />
+              <span className="absolute -bottom-4 right-1 text-[9px] font-sans font-bold text-matcha-300">グラム</span>
+            </div>
+          </div>
+
+          <div className="h-px bg-matcha-50 w-full" />
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-matcha-50 p-2.5 rounded-xl text-matcha-600">

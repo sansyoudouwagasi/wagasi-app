@@ -1,0 +1,22 @@
+{
+  "name": "和菓子計算",
+  "short_name": "和菓子計算",
+  "description": "和菓子の栄養成分を計算するアプリ",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#faf5f0",
+  "theme_color": "#e8a0b4",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

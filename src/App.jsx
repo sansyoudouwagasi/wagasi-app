@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star } from "lucide-react";
 import mextData from "./data/mext_data.json";
+import { expandSearchQuery } from "./utils/searchUtils";
 
 export default function App() {
   const [ingredients, setIngredients] = useState([]);
@@ -160,18 +161,21 @@ export default function App() {
 
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
-    const query = search.toLowerCase();
     
+    // 検索クエリをひらがな・カタカナ・和菓子同義語で拡張
+    const queries = expandSearchQuery(search);
+    
+    const matchItem = (item) => {
+      const name = item.name.toLowerCase();
+      const kana = (item.kana || "").toLowerCase();
+      return queries.some(q => name.includes(q) || kana.includes(q));
+    };
+
     // マイ材料から検索
-    const customMatches = customIngredients.filter(item => 
-      item.name.toLowerCase().includes(query)
-    );
+    const customMatches = customIngredients.filter(matchItem);
     
     // 標準データから検索
-    const standardMatches = mextData.filter(item => 
-      item.name.toLowerCase().includes(query) || 
-      (item.kana && item.kana.includes(query))
-    );
+    const standardMatches = mextData.filter(matchItem);
     
     return [...customMatches, ...standardMatches].slice(0, 15);
   }, [search, customIngredients]);

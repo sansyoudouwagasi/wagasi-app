@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X } from "lucide-react";
+import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star } from "lucide-react";
 import mextData from "./data/mext_data.json";
 
 export default function App() {
@@ -14,6 +14,17 @@ export default function App() {
   const [recipeName, setRecipeName] = useState("");
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showLoadModal, setShowLoadModal] = useState(false);
+
+  // マイ材料用
+  const [customIngredients, setCustomIngredients] = useState([]);
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [newCustom, setNewCustom] = useState({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "" });
+
+  // 歩留まり（完成重量）用
+  const [yieldWeight, setYieldWeight] = useState("");
+  
+  // 結果表示の切り替え
+  const [displayMode, setDisplayMode] = useState("perPiece"); // "perPiece" | "per100g"
 
   // ローカルストレージからの読み込み
   useEffect(() => {
@@ -35,10 +46,52 @@ export default function App() {
           });
         }
       }
+      
+      const customData = localStorage.getItem('wagashi_custom_ingredients');
+      if (customData) {
+        setCustomIngredients(JSON.parse(customData));
+      }
     } catch(e) {
       console.error("データの読み込みに失敗しました", e);
     }
   }, []);
+
+  const saveCustomIngredient = (e) => {
+    e.preventDefault();
+    if (!newCustom.name.trim()) {
+      showStatus("材料名を入力してください");
+      return;
+    }
+    
+    const ingredient = {
+      id: `custom-${Date.now()}`,
+      name: newCustom.name,
+      kcal: Number(newCustom.kcal) || 0,
+      protein: Number(newCustom.protein) || 0,
+      fat: Number(newCustom.fat) || 0,
+      carb: Number(newCustom.carb) || 0,
+      salt: Number(newCustom.salt) || 0,
+      isCustom: true
+    };
+    
+    const updatedList = [...customIngredients, ingredient];
+    setCustomIngredients(updatedList);
+    localStorage.setItem('wagashi_custom_ingredients', JSON.stringify(updatedList));
+    
+    setNewCustom({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "" });
+    setShowCustomModal(false);
+    showStatus("マイ材料を登録しました");
+  };
+
+  const deleteCustomIngredient = (id, e) => {
+    e.stopPropagation();
+    if (window.confirm("このマイ材料を削除しますか？")) {
+      const updatedList = customIngredients.filter(item => item.id !== id);
+      setCustomIngredients(updatedList);
+      localStorage.setItem('wagashi_custom_ingredients', JSON.stringify(updatedList));
+      showStatus("削除しました");
+    }
+  };
 
   const showStatus = (msg) => {
     setStatusMessage(msg);
@@ -67,6 +120,7 @@ export default function App() {
         [recipeName]: {
           ingredients,
           servings,
+          yieldWeight,
           updatedAt: Date.now()
         }
       };
@@ -86,6 +140,7 @@ export default function App() {
     if (recipe) {
       setIngredients(recipe.ingredients || []);
       setServings(recipe.servings || 1);
+      setYieldWeight(recipe.yieldWeight || "");
       setRecipeName(name);
       setShowLoadModal(false);
       showStatus(`「${name}」を読み込みました`);
@@ -106,11 +161,20 @@ export default function App() {
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
     const query = search.toLowerCase();
-    return mextData.filter(item => 
+    
+    // マイ材料から検索
+    const customMatches = customIngredients.filter(item => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    // 標準データから検索
+    const standardMatches = mextData.filter(item => 
       item.name.toLowerCase().includes(query) || 
       (item.kana && item.kana.includes(query))
-    ).slice(0, 15);
-  }, [search]);
+    );
+    
+    return [...customMatches, ...standardMatches].slice(0, 15);
+  }, [search, customIngredients]);
 
   const addIngredient = (food) => {
     setIngredients([...ingredients, { ...food, amount: 100, uid: Math.random().toString(36).substr(2, 9) }]);
@@ -135,6 +199,9 @@ export default function App() {
     return acc;
   }, { kcal: 0, p: 0, f: 0, c: 0, s: 0 });
 
+  const rawTotalWeight = ingredients.reduce((acc, item) => acc + item.amount, 0);
+  const finalWeight = yieldWeight ? Number(yieldWeight) : rawTotalWeight;
+
   const perOne = {
     kcal: totals.kcal / servings,
     p: totals.p / servings,
@@ -142,6 +209,16 @@ export default function App() {
     c: totals.c / servings,
     s: totals.s / servings,
   };
+
+  const per100g = {
+    kcal: finalWeight > 0 ? (totals.kcal / finalWeight) * 100 : 0,
+    p: finalWeight > 0 ? (totals.p / finalWeight) * 100 : 0,
+    f: finalWeight > 0 ? (totals.f / finalWeight) * 100 : 0,
+    c: finalWeight > 0 ? (totals.c / finalWeight) * 100 : 0,
+    s: finalWeight > 0 ? (totals.s / finalWeight) * 100 : 0,
+  };
+
+  const displayData = displayMode === "perPiece" ? perOne : per100g;
 
   return (
     <div className="min-h-screen bg-washi text-sumi pb-24 font-sans">
@@ -198,15 +275,25 @@ export default function App() {
 
         {/* 検索 */}
         <div className="relative">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-matcha-300 group-focus-within:text-matcha-600 transition-colors" size={20} />
-            <input
-              type="text"
-              className="w-full bg-white border border-matcha-200 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-matcha-500/20 focus:border-matcha-500 shadow-sm transition-all text-sumi placeholder:text-matcha-300 font-serif"
-              placeholder="和菓子の材料を検索 (例: あずき)"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex gap-2">
+            <div className="relative group flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-matcha-300 group-focus-within:text-matcha-600 transition-colors" size={20} />
+              <input
+                type="text"
+                className="w-full bg-white border border-matcha-200 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-matcha-500/20 focus:border-matcha-500 shadow-sm transition-all text-sumi placeholder:text-matcha-300 font-serif"
+                placeholder="和菓子の材料を検索 (例: あずき)"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCustomModal(true)}
+              className="bg-matcha-50 hover:bg-matcha-100 text-matcha-700 border border-matcha-200 px-4 rounded-2xl font-bold text-sm flex flex-col items-center justify-center gap-1 transition-all flex-shrink-0"
+            >
+              <Edit3 size={18} />
+              <span className="text-[10px]">マイ材料</span>
+            </button>
           </div>
 
           {searchResults.length > 0 && (
@@ -219,8 +306,13 @@ export default function App() {
                   className="w-full text-left px-5 py-3 hover:bg-matcha-50 border-b last:border-0 border-matcha-50 flex justify-between items-center group transition-colors"
                 >
                   <div className="flex-1 pr-4">
-                    <div className="font-serif font-bold text-sumi group-hover:text-matcha-700 transition-colors">{item.name}</div>
-                    <div className="text-[11px] text-matcha-400 font-sans tracking-wide">ID: {item.id} • {item.kcal}kcal / 100g</div>
+                    <div className="font-serif font-bold text-sumi group-hover:text-matcha-700 transition-colors">
+                      {item.isCustom && <Star size={12} className="inline text-sakura-500 mr-1 -mt-0.5 fill-sakura-300" />}
+                      {item.name}
+                    </div>
+                    <div className="text-[11px] text-matcha-400 font-sans tracking-wide">
+                      {item.isCustom ? 'マイ材料' : `ID: ${item.id}`} • {item.kcal}kcal / 100g
+                    </div>
                   </div>
                   <div className="bg-matcha-100 text-matcha-600 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                     <Plus size={16} />
@@ -250,7 +342,10 @@ export default function App() {
               {ingredients.map((item) => (
                 <div key={item.uid} className="bg-white p-4 rounded-2xl border border-matcha-100 shadow-sm flex items-center gap-4 group hover:border-matcha-300 transition-colors">
                   <div className="flex-1">
-                    <div className="font-serif font-bold text-sumi text-sm leading-tight mb-1">{item.name}</div>
+                    <div className="font-serif font-bold text-sumi text-sm leading-tight mb-1">
+                      {item.isCustom && <Star size={12} className="inline text-sakura-500 mr-1 -mt-0.5 fill-sakura-300" />}
+                      {item.name}
+                    </div>
                     <div className="text-[10px] text-matcha-400 font-sans">たんぱく質:{item.protein} 脂質:{item.fat} 炭水化物:{item.carb}</div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -278,25 +373,52 @@ export default function App() {
         </div>
 
         {/* 分量設定 */}
-        <div className="bg-white p-5 rounded-3xl border border-matcha-100 shadow-sm flex items-center justify-between relative z-0">
-          <div className="flex items-center gap-3">
-            <div className="bg-azuki-50 p-2.5 rounded-xl text-azuki-600">
-              <Info size={20} />
+        <div className="bg-white p-5 rounded-3xl border border-matcha-100 shadow-sm space-y-4 relative z-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-matcha-50 p-2.5 rounded-xl text-matcha-600">
+                <Calculator size={20} />
+              </div>
+              <div>
+                <div className="text-sm font-serif font-bold text-sumi tracking-wide">完成後の総重量</div>
+                <div className="text-[10px] text-matcha-500 font-sans leading-tight mt-0.5">空欄時は生重量(<span className="font-bold">{rawTotalWeight}</span>g)で計算</div>
+              </div>
             </div>
-            <div>
-              <div className="text-sm font-serif font-bold text-sumi tracking-wide">出来上がり個数</div>
-              <div className="text-[11px] text-matcha-500 font-sans">1個あたりの成分を計算します</div>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                placeholder={rawTotalWeight.toString()}
+                className="w-20 bg-washi border border-matcha-100 rounded-xl py-2 px-2 text-right font-black text-sumi focus:ring-2 focus:ring-matcha-500 focus:outline-none focus:border-transparent transition-all placeholder:text-matcha-300"
+                value={yieldWeight}
+                onChange={(e) => setYieldWeight(e.target.value)}
+              />
+              <span className="absolute -bottom-4 right-1 text-[9px] font-sans font-bold text-matcha-300">グラム</span>
             </div>
           </div>
-          <div className="relative">
-            <input
-              type="number"
-              min="1"
-              className="w-16 bg-washi border border-matcha-100 rounded-xl py-2 text-center font-black text-sumi focus:ring-2 focus:ring-azuki-500 focus:outline-none focus:border-transparent transition-all"
-              value={servings}
-              onChange={(e) => setServings(Math.max(1, Number(e.target.value)))}
-            />
-            <span className="absolute -bottom-4 right-1/2 translate-x-1/2 text-[10px] font-sans font-bold text-matcha-300">個</span>
+          
+          <div className="h-px bg-matcha-50 w-full" />
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-azuki-50 p-2.5 rounded-xl text-azuki-600">
+                <Info size={20} />
+              </div>
+              <div>
+                <div className="text-sm font-serif font-bold text-sumi tracking-wide">出来上がり個数</div>
+                <div className="text-[10px] text-matcha-500 font-sans leading-tight mt-0.5">1個あたりの成分を計算します</div>
+              </div>
+            </div>
+            <div className="relative">
+              <input
+                type="number"
+                min="1"
+                className="w-16 bg-washi border border-matcha-100 rounded-xl py-2 text-center font-black text-sumi focus:ring-2 focus:ring-azuki-500 focus:outline-none focus:border-transparent transition-all"
+                value={servings}
+                onChange={(e) => setServings(Math.max(1, Number(e.target.value)))}
+              />
+              <span className="absolute -bottom-4 right-1/2 translate-x-1/2 text-[10px] font-sans font-bold text-matcha-300">個</span>
+            </div>
           </div>
         </div>
 
@@ -313,20 +435,33 @@ export default function App() {
                 <span className="text-matcha-400 font-sans font-bold text-sm">kcal</span>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sakura-400 text-[11px] font-sans font-bold tracking-[0.2em] mb-1">1個あたり</p>
+            <div className="text-right flex flex-col items-end">
+              <div className="bg-gray-800 rounded-lg p-0.5 flex gap-1 mb-2 border border-gray-700">
+                <button 
+                  onClick={() => setDisplayMode("perPiece")}
+                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${displayMode === "perPiece" ? "bg-matcha-600 text-white" : "text-gray-400 hover:text-white"}`}
+                >
+                  1個あたり
+                </button>
+                <button 
+                  onClick={() => setDisplayMode("per100g")}
+                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${displayMode === "per100g" ? "bg-matcha-600 text-white" : "text-gray-400 hover:text-white"}`}
+                >
+                  完成品100g
+                </button>
+              </div>
               <div className="flex items-baseline gap-1 justify-end">
-                <span className="text-3xl font-serif font-black tabular-nums text-white">{perOne.kcal.toFixed(0)}</span>
+                <span className="text-3xl font-serif font-black tabular-nums text-white">{displayData.kcal.toFixed(0)}</span>
                 <span className="text-sakura-300 text-xs font-sans font-bold">kcal</span>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-4 gap-4 pt-6 border-t border-gray-700 relative z-10">
-            <NutrientBox label="たんぱく" value={perOne.p} unit="g" color="bg-matcha-500" />
-            <NutrientBox label="脂質" value={perOne.f} unit="g" color="bg-azuki-500" />
-            <NutrientBox label="炭水化物" value={perOne.c} unit="g" color="bg-sakura-500" />
-            <NutrientBox label="食塩相当" value={perOne.s} unit="g" color="bg-gray-400" />
+            <NutrientBox label="たんぱく" value={displayData.p} unit="g" color="bg-matcha-500" />
+            <NutrientBox label="脂質" value={displayData.f} unit="g" color="bg-azuki-500" />
+            <NutrientBox label="炭水化物" value={displayData.c} unit="g" color="bg-sakura-500" />
+            <NutrientBox label="食塩相当" value={displayData.s} unit="g" color="bg-gray-400" />
           </div>
 
           <div className="space-y-3 relative z-10">
@@ -335,9 +470,9 @@ export default function App() {
               <span className="text-[10px] font-sans font-bold text-washi bg-gray-800 px-2 py-0.5 rounded border border-gray-700">エネルギー比 %</span>
             </div>
             <div className="h-3.5 w-full bg-gray-800 rounded-full flex overflow-hidden ring-2 ring-gray-800/50">
-              <div className="bg-matcha-500 h-full" style={{ width: `${(perOne.p * 4 / (perOne.kcal || 1)) * 100}%` }} title="たんぱく質" />
-              <div className="bg-azuki-500 h-full" style={{ width: `${(perOne.f * 9 / (perOne.kcal || 1)) * 100}%` }} title="脂質" />
-              <div className="bg-sakura-500 h-full" style={{ width: `${(perOne.c * 4 / (perOne.kcal || 1)) * 100}%` }} title="炭水化物" />
+              <div className="bg-matcha-500 h-full" style={{ width: `${(displayData.p * 4 / (displayData.kcal || 1)) * 100}%` }} title="たんぱく質" />
+              <div className="bg-azuki-500 h-full" style={{ width: `${(displayData.f * 9 / (displayData.kcal || 1)) * 100}%` }} title="脂質" />
+              <div className="bg-sakura-500 h-full" style={{ width: `${(displayData.c * 4 / (displayData.kcal || 1)) * 100}%` }} title="炭水化物" />
             </div>
             <div className="flex justify-between px-1">
               <div className="flex items-center gap-1.5 text-[10px] font-sans font-bold text-matcha-200">
@@ -387,7 +522,7 @@ export default function App() {
       {/* Load Modal */}
       {showLoadModal && (
         <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:items-center sm:justify-center p-0 sm:p-4 bg-sumi/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-washi w-full sm:max-w-sm rounded-t-[2.5rem] sm:rounded-[2rem] p-6 shadow-2xl border-t sm:border border-matcha-100 relative max-h-[85vh] flex flex-col">
+          <div className="bg-washi w-full sm:max-w-sm rounded-[2rem] sm:rounded-[2rem] p-6 shadow-2xl border-t sm:border border-matcha-100 relative max-h-[85vh] flex flex-col">
             <button type="button" onClick={() => setShowLoadModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-sumi p-1"><X size={20}/></button>
             <h3 className="font-serif font-bold text-lg text-matcha-900 mb-5 shrink-0 ml-1">保存されたレシピ</h3>
             
@@ -419,6 +554,87 @@ export default function App() {
                     </button>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Ingredient Modal */}
+      {showCustomModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-sumi/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-washi w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-matcha-100 relative max-h-[90vh] flex flex-col">
+            <button type="button" onClick={() => setShowCustomModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-sumi p-1 z-10"><X size={20}/></button>
+            <h3 className="font-serif font-bold text-lg text-matcha-900 mb-5 shrink-0">マイ材料の登録</h3>
+            
+            <form onSubmit={saveCustomIngredient} className="space-y-4 shrink-0 mb-6">
+              <div>
+                <label className="block text-xs font-bold text-matcha-600 mb-1 ml-1">材料名</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 focus:ring-2 focus:ring-matcha-500 focus:outline-none text-sm font-bold text-sumi"
+                  value={newCustom.name}
+                  onChange={(e) => setNewCustom({...newCustom, name: e.target.value})}
+                  placeholder="例: こだわり粒あん"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">エネルギー (kcal)</label>
+                    <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.kcal} onChange={(e) => setNewCustom({...newCustom, kcal: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">脂質 (g)</label>
+                    <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.fat} onChange={(e) => setNewCustom({...newCustom, fat: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">食塩相当量 (g)</label>
+                    <input type="number" step="0.01" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.salt} onChange={(e) => setNewCustom({...newCustom, salt: e.target.value})} />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">たんぱく質 (g)</label>
+                    <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.protein} onChange={(e) => setNewCustom({...newCustom, protein: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">炭水化物 (g)</label>
+                    <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.carb} onChange={(e) => setNewCustom({...newCustom, carb: e.target.value})} />
+                  </div>
+                  <div className="flex items-end h-[58px]">
+                    <button type="submit" className="w-full bg-matcha-600 hover:bg-matcha-700 text-white py-2 rounded-xl text-sm font-bold transition-all shadow-md">
+                      登録する
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            <div className="flex-1 overflow-y-auto min-h-[100px] border-t border-matcha-100 pt-4 custom-scrollbar">
+              <h4 className="text-xs font-bold text-matcha-600 mb-3 ml-1">登録済みのマイ材料</h4>
+              {customIngredients.length === 0 ? (
+                <p className="text-[11px] text-matcha-400 text-center py-4">登録されているマイ材料はありません</p>
+              ) : (
+                <div className="space-y-2 px-1">
+                  {customIngredients.map(item => (
+                    <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-matcha-100 shadow-sm">
+                      <div>
+                        <div className="font-bold text-sm text-sumi flex items-center">
+                          <Star size={12} className="inline text-sakura-500 mr-1 fill-sakura-300" />
+                          {item.name}
+                        </div>
+                        <div className="text-[9px] text-matcha-400 font-sans mt-0.5">
+                          {item.kcal}kcal / P:{item.protein} F:{item.fat} C:{item.carb}
+                        </div>
+                      </div>
+                      <button type="button" onClick={(e) => deleteCustomIngredient(item.id, e)} className="text-sakura-300 hover:text-sakura-600 p-2">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>

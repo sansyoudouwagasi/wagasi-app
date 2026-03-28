@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star, Droplets } from "lucide-react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star, Droplets, FileDown } from "lucide-react";
 import mextData from "./data/mext_data.json";
 import { expandSearchQuery } from "./utils/searchUtils";
+import { exportRecipePdf } from "./utils/pdfExport";
 
 export default function App() {
   const [ingredients, setIngredients] = useState([]);
@@ -27,6 +28,7 @@ export default function App() {
   
   // 結果表示の切り替え
   const [displayMode, setDisplayMode] = useState("perPiece"); // "perPiece" | "per100g"
+  const [pdfGenerating, setPdfGenerating] = useState(false);
 
   // ローカルストレージからの読み込み
   useEffect(() => {
@@ -226,6 +228,35 @@ export default function App() {
   };
 
   const displayData = displayMode === "perPiece" ? perOne : per100g;
+
+  const handlePdfExport = useCallback(async () => {
+    if (ingredients.length === 0) {
+      showStatus("材料を追加してください");
+      return;
+    }
+    setPdfGenerating(true);
+    showStatus("PDF を生成しています...");
+    try {
+      await exportRecipePdf({
+        recipeName: recipeName || "無題のレシピ",
+        ingredients,
+        addedWater,
+        servings,
+        totals,
+        per100g,
+        perOne,
+        rawTotalWeight,
+        finalWeight,
+        yieldWeight,
+      });
+      showStatus("PDF をダウンロードしました");
+    } catch (err) {
+      console.error("PDF生成エラー:", err);
+      showStatus("PDF の生成に失敗しました");
+    } finally {
+      setPdfGenerating(false);
+    }
+  }, [ingredients, recipeName, addedWater, servings, totals, per100g, perOne, rawTotalWeight, finalWeight, yieldWeight]);
 
   return (
     <div className="min-h-screen bg-washi text-sumi pb-24 font-sans">
@@ -520,6 +551,29 @@ export default function App() {
             </div>
           </div>
         </div>
+
+        {/* PDF保存ボタン */}
+        <button
+          type="button"
+          onClick={handlePdfExport}
+          disabled={pdfGenerating || ingredients.length === 0}
+          className="w-full bg-gradient-to-r from-matcha-600 to-matcha-700 hover:from-matcha-700 hover:to-matcha-800 text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-lg disabled:opacity-40 disabled:pointer-events-none border border-matcha-500/30"
+        >
+          {pdfGenerating ? (
+            <>
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              PDF を生成中...
+            </>
+          ) : (
+            <>
+              <FileDown size={20} />
+              PDF形式で保存
+            </>
+          )}
+        </button>
       </main>
 
       {/* Save Modal */}

@@ -20,11 +20,13 @@ export default function App() {
   // マイ材料用
   const [customIngredients, setCustomIngredients] = useState([]);
   const [showCustomModal, setShowCustomModal] = useState(false);
+  const [showCustomForm, setShowCustomForm] = useState(false);
   const [newCustom, setNewCustom] = useState({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "" });
 
   // 歩留まり（完成重量）用
   const [yieldWeight, setYieldWeight] = useState("");
   const [addedWater, setAddedWater] = useState(""); // 加水用
+  const [saveAsIngredient, setSaveAsIngredient] = useState(false); // マイ材料として登録するか
   
   // 結果表示の切り替え
   const [displayMode, setDisplayMode] = useState("perPiece"); // "perPiece" | "per100g"
@@ -83,7 +85,7 @@ export default function App() {
     localStorage.setItem('wagashi_custom_ingredients', JSON.stringify(updatedList));
     
     setNewCustom({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "" });
-    setShowCustomModal(false);
+    setShowCustomForm(false);
     showStatus("マイ材料を登録しました");
   };
 
@@ -102,11 +104,46 @@ export default function App() {
     setTimeout(() => setStatusMessage(""), 2500);
   };
 
+  // ======= 成分計算ロジック =======
+  const totals = ingredients.reduce((acc, item) => {
+    const r = item.amount / 100;
+    acc.kcal += item.kcal * r;
+    acc.p += item.protein * r;
+    acc.f += item.fat * r;
+    acc.c += item.carb * r;
+    acc.s += item.salt * r;
+    return acc;
+  }, { kcal: 0, p: 0, f: 0, c: 0, s: 0 });
+
+  const rawTotalWeight = ingredients.reduce((acc, item) => acc + item.amount, 0) + (Number(addedWater) || 0);
+  const finalWeight = yieldWeight ? Number(yieldWeight) : rawTotalWeight;
+
+  const perOne = {
+    kcal: totals.kcal / servings,
+    p: totals.p / servings,
+    f: totals.f / servings,
+    c: totals.c / servings,
+    s: totals.s / servings,
+  };
+
+  const per100g = {
+    kcal: finalWeight > 0 ? (totals.kcal / finalWeight) * 100 : 0,
+    p: finalWeight > 0 ? (totals.p / finalWeight) * 100 : 0,
+    f: finalWeight > 0 ? (totals.f / finalWeight) * 100 : 0,
+    c: finalWeight > 0 ? (totals.c / finalWeight) * 100 : 0,
+    s: finalWeight > 0 ? (totals.s / finalWeight) * 100 : 0,
+  };
+
+  const displayData = displayMode === "perPiece" ? perOne : per100g;
+
+  // ======= 保存と連携ロジック =======
   const openSaveModal = () => {
     if (ingredients.length === 0) {
       showStatus("材料を追加してください");
       return;
     }
+    const isAlreadySaved = customIngredients.some(ci => ci.type === 'recipe' && ci.linkedRecipe === recipeName);
+    setSaveAsIngredient(isAlreadySaved);
     setShowSaveModal(true);
   };
 
@@ -119,7 +156,41 @@ export default function App() {
     setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 300));
-      const newRecipes = {
+      
+      let newCustomIngredients = [...customIngredients];
+      let ingredientId = null;
+      let didUpdateIngredient = false;
+      
+      if (saveAsIngredient) {
+        const existingIndex = customIngredients.findIndex(ci => ci.type === 'recipe' && ci.linkedRecipe === recipeName);
+        const ingredientData = {
+          id: existingIndex >= 0 ? customIngredients[existingIndex].id : `custom-recipe-${Date.now()}`,
+          name: recipeName,
+          kcal: Number(per100g.kcal.toFixed(1)),
+          protein: Number(per100g.p.toFixed(1)),
+          fat: Number(per100g.f.toFixed(1)),
+          carb: Number(per100g.c.toFixed(1)),
+          salt: Number(per100g.s.toFixed(2)),
+          isCustom: true,
+          type: 'recipe',
+          linkedRecipe: recipeName
+        };
+        ingredientId = ingredientData.id;
+        
+        if (existingIndex >= 0) {
+          newCustomIngredients[existingIndex] = ingredientData;
+          didUpdateIngredient = true;
+        } else {
+          newCustomIngredients.push(ingredientData);
+        }
+        setCustomIngredients(newCustomIngredients);
+        localStorage.setItem('wagashi_custom_ingredients', JSON.stringify(newCustomIngredients));
+      } else {
+        // 保存チェックが外された場合、既存のマイ材料から該当レシピを削除するかは要件次第ですが、
+        // 今回は「チェックして保存した時のみ作成・更新される」仕様としておきます。
+      }
+
+      let newRecipes = {
         ...savedRecipes,
         [recipeName]: {
           ingredients,
@@ -129,6 +200,37 @@ export default function App() {
           updatedAt: Date.now()
         }
       };
+
+      if (didUpdateIngredient && ingredientId) {
+        // 他のレシピでこの材料を使っているものを探す
+        const dependentRecipes = Object.keys(newRecipes).filter(key => 
+          key !== recipeName && 
+          newRecipes[key].ingredients.some(ing => ing.id === ingredientId)
+        );
+        
+        if (dependentRecipes.length > 0) {
+          // alertやconfirmではユーザーをブロックするため好ましくないが、ここは要件に合わせてconfirmとする
+          if (window.confirm(`このレシピは他のレシピ（${dependentRecipes.join('、')}）の材料に利用されています。\nこれらのレシピ内の成分数値も最新に更新（連動）しますか？`)) {
+            dependentRecipes.forEach(depName => {
+              newRecipes[depName].ingredients = newRecipes[depName].ingredients.map(ing => {
+                if (ing.id === ingredientId) {
+                  return {
+                    ...ing,
+                    kcal: Number(per100g.kcal.toFixed(1)),
+                    protein: Number(per100g.p.toFixed(1)),
+                    fat: Number(per100g.f.toFixed(1)),
+                    carb: Number(per100g.c.toFixed(1)),
+                    salt: Number(per100g.s.toFixed(2)),
+                  };
+                }
+                return ing;
+              });
+              newRecipes[depName].updatedAt = Date.now();
+            });
+          }
+        }
+      }
+
       localStorage.setItem('wagashi_recipes', JSON.stringify(newRecipes));
       setSavedRecipes(newRecipes);
       setShowSaveModal(false);
@@ -198,36 +300,7 @@ export default function App() {
     setIngredients(ingredients.filter(i => i.uid !== uid));
   };
 
-  const totals = ingredients.reduce((acc, item) => {
-    const r = item.amount / 100;
-    acc.kcal += item.kcal * r;
-    acc.p += item.protein * r;
-    acc.f += item.fat * r;
-    acc.c += item.carb * r;
-    acc.s += item.salt * r;
-    return acc;
-  }, { kcal: 0, p: 0, f: 0, c: 0, s: 0 });
-
-  const rawTotalWeight = ingredients.reduce((acc, item) => acc + item.amount, 0) + (Number(addedWater) || 0);
-  const finalWeight = yieldWeight ? Number(yieldWeight) : rawTotalWeight;
-
-  const perOne = {
-    kcal: totals.kcal / servings,
-    p: totals.p / servings,
-    f: totals.f / servings,
-    c: totals.c / servings,
-    s: totals.s / servings,
-  };
-
-  const per100g = {
-    kcal: finalWeight > 0 ? (totals.kcal / finalWeight) * 100 : 0,
-    p: finalWeight > 0 ? (totals.p / finalWeight) * 100 : 0,
-    f: finalWeight > 0 ? (totals.f / finalWeight) * 100 : 0,
-    c: finalWeight > 0 ? (totals.c / finalWeight) * 100 : 0,
-    s: finalWeight > 0 ? (totals.s / finalWeight) * 100 : 0,
-  };
-
-  const displayData = displayMode === "perPiece" ? perOne : per100g;
+  // 計算ロジックは上に移動済み
 
   const handlePdfExport = useCallback(async () => {
     if (ingredients.length === 0) {
@@ -338,8 +411,11 @@ export default function App() {
                       {item.isCustom && <Star size={12} className="inline text-sakura-500 mr-1 -mt-0.5 fill-sakura-300" />}
                       {item.name}
                     </div>
-                    <div className="text-[11px] text-matcha-400 font-sans tracking-wide">
-                      {item.isCustom ? 'マイ材料' : `ID: ${item.id}`} • {item.kcal}kcal / 100g
+                    <div className="text-[11px] text-matcha-400 font-sans mt-0.5 font-bold tracking-wide">
+                      {item.isCustom 
+                        ? (item.type === 'recipe' ? <span className="text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded mr-1">🔗 レシピ連動</span> : <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mr-1">🏷️ 自家製手動</span>)
+                        : null}
+                      {!item.isCustom && `ID: ${item.id} • `}{item.kcal}kcal / 100g
                     </div>
                   </div>
                   <div className="bg-matcha-100 text-matcha-600 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
@@ -585,6 +661,20 @@ export default function App() {
                   onChange={(e) => setRecipeName(e.target.value)}
                 />
               </div>
+
+              <label className="flex items-center gap-3 p-3 bg-matcha-50 rounded-xl border border-matcha-100 cursor-pointer hover:bg-matcha-100 transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={saveAsIngredient}
+                  onChange={(e) => setSaveAsIngredient(e.target.checked)}
+                  className="w-5 h-5 text-matcha-600 rounded focus:ring-matcha-500 border-matcha-300"
+                />
+                <div className="flex-1">
+                  <div className="text-sm font-bold text-matcha-900">このレシピを「マイ材料」として登録</div>
+                  <div className="text-[10px] text-matcha-600/80 mt-0.5 leading-tight">100gあたりの成分が保存され、他のレシピの材料として呼び出せるようになります。</div>
+                </div>
+              </label>
+
               <button
                 type="submit"
                 disabled={loading || !recipeName.trim()}
@@ -643,72 +733,90 @@ export default function App() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-sumi/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-washi w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-matcha-100 relative max-h-[90vh] flex flex-col">
             <button type="button" onClick={() => setShowCustomModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-sumi p-1 z-10"><X size={20}/></button>
-            <h3 className="font-serif font-bold text-lg text-matcha-900 mb-5 shrink-0">マイ材料の登録</h3>
+            <h3 className="font-serif font-bold text-lg text-matcha-900 mb-5 shrink-0">マイ材料の管理</h3>
             
-            <form onSubmit={saveCustomIngredient} className="space-y-4 shrink-0 mb-6">
-              <div>
-                <label className="block text-xs font-bold text-matcha-600 mb-1 ml-1">材料名</label>
-                <input
-                  type="text"
-                  required
-                  className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 focus:ring-2 focus:ring-matcha-500 focus:outline-none text-sm font-bold text-sumi"
-                  value={newCustom.name}
-                  onChange={(e) => setNewCustom({...newCustom, name: e.target.value})}
-                  placeholder="例: こだわり粒あん"
-                />
+            {!showCustomForm ? (
+              <button 
+                type="button" 
+                onClick={() => setShowCustomForm(true)}
+                className="w-full bg-white border border-matcha-200 hover:bg-matcha-50 text-matcha-700 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm mb-4 shrink-0"
+              >
+                <Plus size={18} /> 手動でマイ材料を登録する
+              </button>
+            ) : (
+              <div className="bg-matcha-50/50 p-4 rounded-2xl border border-matcha-100 mb-4 relative shrink-0">
+                <button type="button" onClick={() => setShowCustomForm(false)} className="absolute top-2 right-2 text-matcha-400 hover:text-matcha-600 p-1"><X size={16} /></button>
+                <h4 className="text-xs font-bold text-matcha-800 mb-3 ml-1">直接入力して登録</h4>
+                <form onSubmit={saveCustomIngredient} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-matcha-600 mb-1 ml-1">材料名</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 focus:ring-2 focus:ring-matcha-500 focus:outline-none text-sm font-bold text-sumi"
+                      value={newCustom.name}
+                      onChange={(e) => setNewCustom({...newCustom, name: e.target.value})}
+                      placeholder="例: こだわり粒あん"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">エネルギー (kcal)</label>
+                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.kcal} onChange={(e) => setNewCustom({...newCustom, kcal: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">脂質 (g)</label>
+                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.fat} onChange={(e) => setNewCustom({...newCustom, fat: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">食塩相当量 (g)</label>
+                        <input type="number" step="0.01" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.salt} onChange={(e) => setNewCustom({...newCustom, salt: e.target.value})} />
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">たんぱく質 (g)</label>
+                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.protein} onChange={(e) => setNewCustom({...newCustom, protein: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">炭水化物 (g)</label>
+                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.carb} onChange={(e) => setNewCustom({...newCustom, carb: e.target.value})} />
+                      </div>
+                      <div className="flex items-end h-[58px]">
+                        <button type="submit" className="w-full bg-matcha-600 hover:bg-matcha-700 text-white py-2 rounded-xl text-sm font-bold transition-all shadow-md">
+                          登録決定
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">エネルギー (kcal)</label>
-                    <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.kcal} onChange={(e) => setNewCustom({...newCustom, kcal: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">脂質 (g)</label>
-                    <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.fat} onChange={(e) => setNewCustom({...newCustom, fat: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">食塩相当量 (g)</label>
-                    <input type="number" step="0.01" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.salt} onChange={(e) => setNewCustom({...newCustom, salt: e.target.value})} />
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">たんぱく質 (g)</label>
-                    <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.protein} onChange={(e) => setNewCustom({...newCustom, protein: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">炭水化物 (g)</label>
-                    <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.carb} onChange={(e) => setNewCustom({...newCustom, carb: e.target.value})} />
-                  </div>
-                  <div className="flex items-end h-[58px]">
-                    <button type="submit" className="w-full bg-matcha-600 hover:bg-matcha-700 text-white py-2 rounded-xl text-sm font-bold transition-all shadow-md">
-                      登録する
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </form>
+            )}
 
-            <div className="flex-1 overflow-y-auto min-h-[100px] border-t border-matcha-100 pt-4 custom-scrollbar">
+            <div className={`flex-1 overflow-y-auto ${showCustomForm ? 'min-h-[100px] border-t border-matcha-100 pt-4' : ''} custom-scrollbar`}>
               <h4 className="text-xs font-bold text-matcha-600 mb-3 ml-1">登録済みのマイ材料</h4>
               {customIngredients.length === 0 ? (
-                <p className="text-[11px] text-matcha-400 text-center py-4">登録されているマイ材料はありません</p>
+                <p className="text-[11px] text-matcha-400 text-center py-4 bg-white/50 rounded-xl">登録されているマイ材料はありません</p>
               ) : (
                 <div className="space-y-2 px-1">
                   {customIngredients.map(item => (
-                    <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-matcha-100 shadow-sm">
+                    <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-matcha-100 shadow-sm hover:border-matcha-300 transition-colors">
                       <div>
-                        <div className="font-bold text-sm text-sumi flex items-center">
-                          <Star size={12} className="inline text-sakura-500 mr-1 fill-sakura-300" />
+                        <div className="font-bold text-sm text-sumi flex items-center gap-1.5">
+                          {item.type === 'recipe' ? (
+                            <span className="text-[9px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded shadow-sm border border-orange-200">連携</span>
+                          ) : (
+                            <Star size={12} className="inline text-sakura-300 fill-sakura-100" />
+                          )}
                           {item.name}
                         </div>
-                        <div className="text-[9px] text-matcha-400 font-sans mt-0.5">
+                        <div className="text-[9px] text-matcha-400 font-sans mt-1 font-bold tracking-widest">
                           {item.kcal}kcal / P:{item.protein} F:{item.fat} C:{item.carb}
                         </div>
                       </div>
-                      <button type="button" onClick={(e) => deleteCustomIngredient(item.id, e)} className="text-sakura-300 hover:text-sakura-600 p-2">
-                        <Trash2 size={14} />
+                      <button type="button" onClick={(e) => deleteCustomIngredient(item.id, e)} className="text-sakura-300 hover:text-sakura-600 p-2 rounded-xl hover:bg-sakura-50 transition-colors">
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   ))}

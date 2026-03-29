@@ -33,6 +33,7 @@ export default function App() {
   // 結果表示の切り替え
   const [displayMode, setDisplayMode] = useState("perPiece"); // "perPiece" | "per100g"
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfColorMode, setPdfColorMode] = useState("color");
 
   // ローカルストレージからの読み込み
   useEffect(() => {
@@ -323,6 +324,7 @@ export default function App() {
         rawTotalWeight,
         finalWeight,
         yieldWeight,
+        colorMode: pdfColorMode,
       });
       showStatus("PDF をダウンロードしました");
     } catch (err) {
@@ -331,7 +333,7 @@ export default function App() {
     } finally {
       setPdfGenerating(false);
     }
-  }, [ingredients, recipeName, addedWater, servings, totals, per100g, perOne, rawTotalWeight, finalWeight, yieldWeight]);
+  }, [ingredients, recipeName, addedWater, servings, totals, per100g, perOne, rawTotalWeight, finalWeight, yieldWeight, pdfColorMode]);
 
   const resetRecipe = () => {
     if (ingredients.length > 0 || recipeName !== "" || addedWater !== "" || yieldWeight !== "") {
@@ -624,27 +626,37 @@ export default function App() {
         </div>
 
         {/* PDF保存ボタン */}
-        <button
-          type="button"
-          onClick={handlePdfExport}
-          disabled={pdfGenerating || ingredients.length === 0}
-          className="w-full bg-gradient-to-r from-matcha-600 to-matcha-700 hover:from-matcha-700 hover:to-matcha-800 text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-lg disabled:opacity-40 disabled:pointer-events-none border border-matcha-500/30"
-        >
-          {pdfGenerating ? (
-            <>
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              PDF を生成中...
-            </>
-          ) : (
-            <>
-              <FileDown size={20} />
-              PDF形式で保存
-            </>
-          )}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <select
+            value={pdfColorMode}
+            onChange={(e) => setPdfColorMode(e.target.value)}
+            className="bg-white border text-center border-matcha-200 text-matcha-700 py-4 px-4 rounded-2xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-matcha-500/20 shadow-sm shrink-0"
+          >
+            <option value="color">カラー印刷 🎨</option>
+            <option value="mono">白黒（モノクロ） 🖨️</option>
+          </select>
+          <button
+            type="button"
+            onClick={handlePdfExport}
+            disabled={pdfGenerating || ingredients.length === 0}
+            className="w-full bg-gradient-to-r from-matcha-600 to-matcha-700 hover:from-matcha-700 hover:to-matcha-800 text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-lg disabled:opacity-40 disabled:pointer-events-none border border-matcha-500/30"
+          >
+            {pdfGenerating ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                PDF を生成中...
+              </>
+            ) : (
+              <>
+                <FileDown size={20} />
+                PDF形式で保存
+              </>
+            )}
+          </button>
+        </div>
       </main>
 
       {/* Bottom Action Bar */}

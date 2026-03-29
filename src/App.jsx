@@ -24,6 +24,7 @@ export default function App() {
   const [newCustom, setNewCustom] = useState({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "" });
 
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showBackupModal, setShowBackupModal] = useState(false);
 
   // 歩留まり（完成重量）用
   const [yieldWeight, setYieldWeight] = useState("");
@@ -146,7 +147,7 @@ export default function App() {
           setCustomIngredients(data.customIngredients);
         }
         showStatus("データを復元しました");
-        setShowHelpModal(false);
+        setShowBackupModal(false);
       } catch (err) {
         window.alert("バックアップファイルの読み込みに失敗しました。ファイルが破損しているか、形式が間違っています。");
       }
@@ -412,6 +413,14 @@ export default function App() {
           <h1 className="font-serif font-bold text-lg tracking-wider text-matcha-900 hidden sm:block">和菓子栄養計算</h1>
         </div>
         <div className="flex gap-2">
+          <button 
+            type="button" 
+            onClick={() => setShowBackupModal(true)} 
+            className="flex items-center gap-1.5 p-2 bg-white hover:bg-slate-50 text-slate-600 rounded-full transition-colors border border-slate-200 shadow-sm pr-3"
+          >
+            <Download size={20} />
+            <span className="text-xs font-bold">バックアップ</span>
+          </button>
           <button 
             type="button" 
             onClick={() => setShowHelpModal(true)} 
@@ -992,30 +1001,67 @@ export default function App() {
                   <p>画面下部のフッターメニューから、レシピをローカル（ブラウザ内）へ保存・呼び出しができます。<br />画面最下部の「PDF形式で保存」を押すと、きれいな印刷用の成分一覧PDFがダウンロードされます。</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-              {/* バックアップ */}
-              <div className="space-y-2 pt-2 border-t-2 border-matcha-100/50 border-dashed">
-                <h4 className="font-bold text-slate-700 flex items-center gap-2 text-sm">
-                  <span className="bg-slate-200 text-slate-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span> 
-                  データバックアップと復元（重要）
-                </h4>
-                <div className="bg-slate-50 p-4 rounded-2xl shadow-sm border border-slate-200 text-sm font-sans text-sumi leading-relaxed">
-                  <p className="mb-4 text-xs font-bold text-slate-600">お店の大切な資産（登録したレシピとマイ材料のすべて）を1つの「.json」ファイルとして保存・復元できます。定期的な保存をお勧めします。</p>
-                  <div className="flex flex-col gap-3">
-                    <button 
-                      onClick={exportData}
-                      className="bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-colors active:scale-95"
-                    >
-                      <Download size={18} />
-                      バックアップを保存 (ダウンロード)
-                    </button>
-                    <label className="bg-white hover:bg-slate-100 border-2 border-slate-300 text-slate-700 font-bold py-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-colors active:scale-95 m-0">
-                      <Upload size={18} />
-                      バックアップを復元 (読み込み)
-                      <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
-                    </label>
+      {/* Backup Modal */}
+      {showBackupModal && (
+        <div className="fixed inset-0 z-[100] flex animate-in fade-in bg-sumi/60 backdrop-blur-sm p-4 sm:p-6 sm:items-center sm:justify-center">
+          <div className="bg-washi w-full max-w-lg rounded-[2rem] shadow-2xl border border-slate-200 flex flex-col max-h-full sm:max-h-[85vh] overflow-hidden relative">
+            <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-white/50 shrink-0">
+              <div className="flex items-center gap-2">
+                <Download className="text-slate-600" size={24} />
+                <h3 className="font-serif font-bold text-xl text-slate-800">データバックアップと復元</h3>
+              </div>
+              <button type="button" onClick={() => setShowBackupModal(false)} className="text-gray-400 hover:text-sumi p-1 bg-white hover:bg-slate-50 rounded-full transition-colors shadow-sm"><X size={20}/></button>
+            </div>
+            
+            <div className="overflow-y-auto p-5 space-y-6 custom-scrollbar flex-1 bg-washi/50">
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-sm font-sans text-sumi leading-relaxed space-y-5">
+                
+                {/* 保存セクション */}
+                <div>
+                  <h4 className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                    <Download size={16} className="text-slate-500" />
+                    バックアップを保存する（推奨）
+                  </h4>
+                  <p className="text-[12px] text-slate-600 mb-3 leading-relaxed">
+                    現在アプリに登録されている「すべてのレシピ」と「マイ材料」を、1つのファイルにまとめて保存します。スマホの故障や、ブラウザの履歴消去に備えて<strong>定期的に実行</strong>してください。
+                  </p>
+                  <div className="bg-slate-50 rounded-xl p-3 mb-4 text-[11px] text-slate-600 border border-slate-100">
+                    <ul className="list-disc pl-4 space-y-1.5">
+                      <li><strong>ファイル名:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-800">wagashi_backup_今日の日付.json</code></li>
+                      <li><strong>保存先:</strong> お使いの端末の「ダウンロード」フォルダや「ファイル」アプリ内に保存されます。</li>
+                    </ul>
                   </div>
+                  <button 
+                    onClick={exportData}
+                    className="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors active:scale-95"
+                  >
+                    <Download size={18} />
+                    バックアップを保存 (ダウンロード)
+                  </button>
                 </div>
+
+                {/* 復元セクション */}
+                <div className="pt-5 border-t border-slate-100">
+                  <h4 className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                    <Upload size={16} className="text-slate-500" />
+                    バックアップを復元する
+                  </h4>
+                  <p className="text-[12px] text-slate-600 mb-4 leading-relaxed">
+                    過去に保存した <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-800">.json</code> ファイルを読み込み、データを復元します。<br />
+                    <span className="text-red-600 font-bold">※注意:</span> 復元を実行すると、現在アプリ内にあるデータは読み込んだデータで上書き（追加統合）されます。
+                  </p>
+                  <label className="w-full bg-white hover:bg-slate-50 border-2 border-slate-300 text-slate-700 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-colors active:scale-95 m-0 mb-1">
+                    <Upload size={18} />
+                    バックアップを復元 (読み込み)
+                    <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
+                  </label>
+                </div>
+
               </div>
             </div>
           </div>

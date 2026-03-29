@@ -293,6 +293,7 @@ export default function App() {
   const addIngredient = (food) => {
     setIngredients([...ingredients, { ...food, amount: 100, uid: Math.random().toString(36).substr(2, 9) }]);
     setSearch("");
+    showStatus(`「${food.name}」を追加しました`);
   };
 
   const updateAmount = (uid, val) => {
@@ -446,8 +447,8 @@ export default function App() {
                       {!item.isCustom && `ID: ${item.id} • `}{item.kcal}kcal / 100g
                     </div>
                   </div>
-                  <div className="bg-matcha-100 text-matcha-600 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Plus size={16} />
+                  <div className="bg-matcha-500 text-white p-2 rounded-full shadow-md group-hover:bg-matcha-600 transition-colors shrink-0">
+                    <Plus size={18} strokeWidth={3} />
                   </div>
                 </button>
               ))}

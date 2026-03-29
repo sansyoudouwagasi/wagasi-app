@@ -484,10 +484,12 @@ export default function App() {
                     <div className="relative">
                       <input
                         type="number"
-                        className="w-[72px] bg-washi border border-matcha-100 rounded-xl py-2 px-2 text-right font-black text-sumi focus:ring-2 focus:ring-matcha-500 focus:outline-none focus:border-transparent transition-all"
+                        className="w-[72px] bg-washi border border-matcha-100 rounded-xl py-2 px-2 text-right font-black text-sumi focus:ring-2 focus:ring-matcha-500 focus:outline-none focus:border-transparent transition-all placeholder:text-matcha-300"
+                        placeholder="100"
                         value={item.amount}
-                        onChange={(e) => updateAmount(item.uid, Number(e.target.value))}
-                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => updateAmount(item.uid, e.target.value === "" ? "" : Number(e.target.value))}
+                        onFocus={() => { if (item.amount === 100) updateAmount(item.uid, ""); }}
+                        onBlur={() => { if (item.amount === "" || item.amount <= 0) updateAmount(item.uid, 100); }}
                       />
                       <span className="absolute -bottom-4 right-1 text-[9px] font-sans font-bold text-matcha-300">グラム</span>
                     </div>
@@ -526,7 +528,6 @@ export default function App() {
                 className="w-20 bg-washi border border-matcha-100 rounded-xl py-2 px-2 text-right font-black text-sumi focus:ring-2 focus:ring-blue-400 focus:outline-none focus:border-transparent transition-all placeholder:text-matcha-300"
                 value={addedWater}
                 onChange={(e) => setAddedWater(e.target.value)}
-                onFocus={(e) => e.target.select()}
               />
               <span className="absolute -bottom-4 right-1 text-[9px] font-sans font-bold text-matcha-300">グラム</span>
             </div>
@@ -552,7 +553,6 @@ export default function App() {
                 className="w-20 bg-washi border border-matcha-100 rounded-xl py-2 px-2 text-right font-black text-sumi focus:ring-2 focus:ring-matcha-500 focus:outline-none focus:border-transparent transition-all placeholder:text-matcha-300"
                 value={yieldWeight}
                 onChange={(e) => setYieldWeight(e.target.value)}
-                onFocus={(e) => e.target.select()}
               />
               <span className="absolute -bottom-4 right-1 text-[9px] font-sans font-bold text-matcha-300">グラム</span>
             </div>
@@ -574,10 +574,12 @@ export default function App() {
               <input
                 type="number"
                 min="1"
-                className="w-16 bg-washi border border-matcha-100 rounded-xl py-2 text-center font-black text-sumi focus:ring-2 focus:ring-azuki-500 focus:outline-none focus:border-transparent transition-all"
+                className="w-16 bg-washi border border-matcha-100 rounded-xl py-2 text-center font-black text-sumi focus:ring-2 focus:ring-azuki-500 focus:outline-none focus:border-transparent transition-all placeholder:text-matcha-300"
+                placeholder="1"
                 value={servings}
-                onChange={(e) => setServings(Math.max(1, Number(e.target.value)))}
-                onFocus={(e) => e.target.select()}
+                onChange={(e) => setServings(e.target.value === "" ? "" : Number(e.target.value))}
+                onFocus={() => { if (servings === 1) setServings(""); }}
+                onBlur={() => { if (servings === "" || servings <= 0) setServings(1); }}
               />
               <span className="absolute -bottom-4 right-1/2 translate-x-1/2 text-[10px] font-sans font-bold text-matcha-300">個</span>
             </div>

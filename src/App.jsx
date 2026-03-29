@@ -333,6 +333,23 @@ export default function App() {
     }
   }, [ingredients, recipeName, addedWater, servings, totals, per100g, perOne, rawTotalWeight, finalWeight, yieldWeight]);
 
+  const resetRecipe = () => {
+    if (ingredients.length > 0 || recipeName !== "" || addedWater !== "" || yieldWeight !== "") {
+      if (window.confirm("現在の入力内容をクリアして新規作成しますか？")) {
+        setIngredients([]);
+        setSearch("");
+        setServings(1);
+        setRecipeName("");
+        setYieldWeight("");
+        setAddedWater("");
+        setSaveAsIngredient(false);
+        showStatus("新規作成の準備ができました");
+      }
+    } else {
+      showStatus("すでに新規作成の状態です");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-washi text-sumi pb-36 font-sans">
       {/* Header */}
@@ -632,14 +649,22 @@ export default function App() {
 
       {/* Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-matcha-100 z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] pb-[calc(1rem+env(safe-area-inset-bottom))]">
-        <div className="max-w-md mx-auto grid grid-cols-2 gap-3">
+        <div className="max-w-md mx-auto grid grid-cols-3 gap-2">
+          <button 
+            type="button"
+            onClick={resetRecipe}
+            className="flex flex-col items-center justify-center bg-white hover:bg-matcha-50 border border-matcha-200 text-matcha-700 py-3 rounded-2xl shadow-sm active:scale-95 transition-all group shrink-0"
+          >
+            <Plus size={24} className="mb-0.5 group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] sm:text-[12px] font-bold w-full text-center">新規作成</span>
+          </button>
           <button 
             type="button"
             onClick={() => setShowLoadModal(true)}
             className="flex flex-col items-center justify-center bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 py-3 rounded-2xl shadow-sm active:scale-95 transition-all group shrink-0"
           >
             <FolderOpen size={24} className="mb-0.5 group-hover:scale-110 transition-transform" />
-            <span className="text-[12px] font-bold w-full text-center">保存したレシピを開く</span>
+            <span className="text-[10px] sm:text-[12px] font-bold w-full text-center">レシピを開く</span>
           </button>
           <button 
             type="button"
@@ -647,7 +672,7 @@ export default function App() {
             className="flex flex-col items-center justify-center bg-matcha-600 hover:bg-matcha-700 border border-matcha-700 text-white py-3 rounded-2xl shadow-md active:scale-95 transition-all group shrink-0"
           >
             <Save size={24} className="mb-0.5 group-hover:scale-110 transition-transform" />
-            <span className="text-[12px] font-bold w-full text-center">レシピを保存</span>
+            <span className="text-[10px] sm:text-[12px] font-bold w-full text-center">レシピを保存</span>
           </button>
         </div>
       </div>

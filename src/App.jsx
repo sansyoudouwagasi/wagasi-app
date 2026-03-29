@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star, Droplets, FileDown, HelpCircle } from "lucide-react";
+import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star, Droplets, FileDown, HelpCircle, Download, Upload } from "lucide-react";
 import mextData from "./data/mext_data.json";
 import { expandSearchQuery } from "./utils/searchUtils";
 import { exportRecipePdf } from "./utils/pdfExport";
@@ -112,6 +112,47 @@ export default function App() {
   const showStatus = (msg) => {
     setStatusMessage(msg);
     setTimeout(() => setStatusMessage(""), 2500);
+  };
+
+  const exportData = () => {
+    const data = {
+      recipes: savedRecipes,
+      customIngredients: customIngredients
+    };
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `wagashi_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showStatus("バックアップを保存しました");
+  };
+
+  const handleImportData = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        if (data.recipes && typeof data.recipes === 'object') {
+          localStorage.setItem('wagashi_recipes', JSON.stringify(data.recipes));
+          setSavedRecipes(data.recipes);
+        }
+        if (Array.isArray(data.customIngredients)) {
+          localStorage.setItem('wagashi_custom_ingredients', JSON.stringify(data.customIngredients));
+          setCustomIngredients(data.customIngredients);
+        }
+        showStatus("データを復元しました");
+        setShowHelpModal(false);
+      } catch (err) {
+        window.alert("バックアップファイルの読み込みに失敗しました。ファイルが破損しているか、形式が間違っています。");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = null;
   };
 
   // ======= 成分計算ロジック =======
@@ -949,6 +990,31 @@ export default function App() {
                 </h4>
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-matcha-50 text-sm font-sans text-sumi leading-relaxed">
                   <p>画面下部のフッターメニューから、レシピをローカル（ブラウザ内）へ保存・呼び出しができます。<br />画面最下部の「PDF形式で保存」を押すと、きれいな印刷用の成分一覧PDFがダウンロードされます。</p>
+                </div>
+              </div>
+
+              {/* バックアップ */}
+              <div className="space-y-2 pt-2 border-t-2 border-matcha-100/50 border-dashed">
+                <h4 className="font-bold text-slate-700 flex items-center gap-2 text-sm">
+                  <span className="bg-slate-200 text-slate-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">5</span> 
+                  データバックアップと復元（重要）
+                </h4>
+                <div className="bg-slate-50 p-4 rounded-2xl shadow-sm border border-slate-200 text-sm font-sans text-sumi leading-relaxed">
+                  <p className="mb-4 text-xs font-bold text-slate-600">お店の大切な資産（登録したレシピとマイ材料のすべて）を1つの「.json」ファイルとして保存・復元できます。定期的な保存をお勧めします。</p>
+                  <div className="flex flex-col gap-3">
+                    <button 
+                      onClick={exportData}
+                      className="bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-colors active:scale-95"
+                    >
+                      <Download size={18} />
+                      バックアップを保存 (ダウンロード)
+                    </button>
+                    <label className="bg-white hover:bg-slate-100 border-2 border-slate-300 text-slate-700 font-bold py-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-colors active:scale-95 m-0">
+                      <Upload size={18} />
+                      バックアップを復元 (読み込み)
+                      <input type="file" accept=".json" className="hidden" onChange={handleImportData} />
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>

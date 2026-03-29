@@ -67,14 +67,21 @@ export default function App() {
 
   const saveCustomIngredient = (e) => {
     e.preventDefault();
-    if (!newCustom.name.trim()) {
+    const trimmedName = newCustom.name.trim();
+    if (!trimmedName) {
       showStatus("材料名を入力してください");
+      return;
+    }
+
+    // 重複チェック
+    if (customIngredients.some(item => item.name === trimmedName)) {
+      window.alert(`「${trimmedName}」はすでに登録されています。\n別の名前を指定してください。`);
       return;
     }
     
     const ingredient = {
       id: `custom-${Date.now()}`,
-      name: newCustom.name,
+      name: trimmedName,
       kcal: Number(newCustom.kcal) || 0,
       protein: Number(newCustom.protein) || 0,
       fat: Number(newCustom.fat) || 0,

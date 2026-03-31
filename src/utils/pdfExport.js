@@ -13,6 +13,7 @@ export async function exportRecipePdf({
   finalWeight,
   yieldWeight,
   colorMode = "color",
+  recipeAllergens = [],
 }) {
   const today = new Date();
   const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
@@ -168,6 +169,16 @@ export async function exportRecipePdf({
         <span><b style="color:${theme.cColor}">C</b>（炭水化物）: ${(per100g.c * 4 / (per100g.kcal || 1) * 100).toFixed(1)}%</span>
       </div>
     </div>
+
+    ${recipeAllergens && recipeAllergens.length > 0 ? `
+    <div style="margin-top: 16px; border: 2px solid ${isMono ? '#666' : '#e57373'}; background-color: ${isMono ? '#f5f5f5' : '#ffebee'}; border-radius: 12px; padding: 16px 20px;">
+      <div style="font-size: 13px; font-weight: 800; color: ${isMono ? '#333' : '#c62828'}; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+        <span style="background: ${isMono ? '#666' : '#f44336'}; color: white; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 14px;">!</span>
+        アレルギー特定原材料等（28品目）
+      </div>
+      <div style="font-size: 16px; font-weight: 900; color: ${isMono ? '#111' : '#b71c1c'};">このレシピには【${recipeAllergens.join('、')}】が含まれています</div>
+    </div>
+    ` : ''}
 
     <div style="text-align: right; margin-top: 16px; font-size: 10px; color: #999; font-weight: 600;">
       日本食品標準成分表（八訂）準拠 ─ 和菓子栄養計算アプリ

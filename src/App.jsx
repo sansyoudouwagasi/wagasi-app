@@ -3,6 +3,7 @@ import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, 
 import mextData from "./data/mext_data.json";
 import { expandSearchQuery } from "./utils/searchUtils";
 import { exportRecipePdf } from "./utils/pdfExport";
+import { ALLERGENS_28, detectAllergensFromText } from "./utils/allergenUtils";
 
 export default function App() {
   const [ingredients, setIngredients] = useState([]);
@@ -21,7 +22,7 @@ export default function App() {
   const [customIngredients, setCustomIngredients] = useState([]);
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [showCustomForm, setShowCustomForm] = useState(false);
-  const [newCustom, setNewCustom] = useState({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "" });
+  const [newCustom, setNewCustom] = useState({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "", allergens: [] });
 
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
@@ -107,6 +108,7 @@ export default function App() {
       fat: Number(newCustom.fat) || 0,
       carb: Number(newCustom.carb) || 0,
       salt: Number(newCustom.salt) || 0,
+      allergens: newCustom.allergens || [],
       isCustom: true
     };
     
@@ -114,7 +116,7 @@ export default function App() {
     setCustomIngredients(updatedList);
     localStorage.setItem('wagashi_custom_ingredients', JSON.stringify(updatedList));
     
-    setNewCustom({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "" });
+    setNewCustom({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "", allergens: [] });
     setShowCustomForm(false);
     showStatus("マイ材料を登録しました");
   };
@@ -199,6 +201,15 @@ export default function App() {
     s: totals.s / servings,
   };
 
+  const recipeAllergens = useMemo(() => {
+    const set = new Set();
+    ingredients.forEach(item => {
+      const list = item.allergens || detectAllergensFromText(item.name);
+      list.forEach(a => set.add(a));
+    });
+    return Array.from(set);
+  }, [ingredients]);
+
   const per100g = {
     kcal: finalWeight > 0 ? (totals.kcal / finalWeight) * 100 : 0,
     p: finalWeight > 0 ? (totals.p / finalWeight) * 100 : 0,
@@ -244,6 +255,7 @@ export default function App() {
           fat: Number(per100g.f.toFixed(1)),
           carb: Number(per100g.c.toFixed(1)),
           salt: Number(per100g.s.toFixed(2)),
+          allergens: recipeAllergens,
           isCustom: true,
           type: 'recipe',
           linkedRecipe: recipeName
@@ -270,6 +282,7 @@ export default function App() {
           servings,
           yieldWeight,
           addedWater,
+          allergens: recipeAllergens,
           updatedAt: Date.now()
         }
       };
@@ -294,6 +307,7 @@ export default function App() {
                     fat: Number(per100g.f.toFixed(1)),
                     carb: Number(per100g.c.toFixed(1)),
                     salt: Number(per100g.s.toFixed(2)),
+                    allergens: recipeAllergens,
                   };
                 }
                 return ing;
@@ -396,6 +410,7 @@ export default function App() {
         finalWeight,
         yieldWeight,
         colorMode: pdfColorMode,
+        recipeAllergens,
       });
       showStatus("PDF をダウンロードしました");
     } catch (err) {
@@ -404,7 +419,7 @@ export default function App() {
     } finally {
       setPdfGenerating(false);
     }
-  }, [ingredients, recipeName, addedWater, servings, totals, per100g, perOne, rawTotalWeight, finalWeight, yieldWeight, pdfColorMode]);
+  }, [ingredients, recipeName, addedWater, servings, totals, per100g, perOne, rawTotalWeight, finalWeight, yieldWeight, pdfColorMode, recipeAllergens]);
 
   const resetRecipe = async () => {
     if (ingredients.length > 0 || recipeName !== "" || addedWater !== "" || yieldWeight !== "") {
@@ -547,6 +562,14 @@ export default function App() {
                         ? (item.type === 'recipe' ? <span className="text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded mr-1">🔗 レシピ連動</span> : <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mr-1">🏷️ 自家製手動</span>)
                         : null}
                       {!item.isCustom && `ID: ${item.id} • `}{item.kcal}kcal / 100g
+                      {(() => {
+                        const algs = item.allergens || detectAllergensFromText(item.name);
+                        return algs.length > 0 ? (
+                           <span className="ml-2 bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-[9px] border border-red-200">
+                             アレルギー: {algs.join("・")}
+                           </span>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                   <div className="bg-matcha-500 text-white p-2 rounded-full shadow-md group-hover:bg-matcha-600 transition-colors shrink-0">
@@ -577,9 +600,19 @@ export default function App() {
               {ingredients.map((item) => (
                 <div key={item.uid} className="bg-white p-4 rounded-2xl border border-matcha-100 shadow-sm flex items-center gap-4 group hover:border-matcha-300 transition-colors">
                   <div className="flex-1">
-                    <div className="font-serif font-bold text-sumi text-sm leading-tight mb-1">
-                      {item.isCustom && <Star size={12} className="inline text-sakura-500 mr-1 -mt-0.5 fill-sakura-300" />}
-                      {item.name}
+                    <div className="font-serif font-bold text-sumi text-sm leading-tight mb-1 flex items-center flex-wrap gap-1.5">
+                      <span>
+                        {item.isCustom && <Star size={12} className="inline text-sakura-500 mr-1 -mt-0.5 fill-sakura-300" />}
+                        {item.name}
+                      </span>
+                      {(() => {
+                        const algs = item.allergens || detectAllergensFromText(item.name);
+                        return algs.length > 0 ? (
+                           <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[9px] border border-red-200">
+                             ⚠️ {algs.join("・")}
+                           </span>
+                        ) : null;
+                      })()}
                     </div>
                     <div className="text-[10px] text-matcha-400 font-sans">たんぱく質:{item.protein} 脂質:{item.fat} 炭水化物:{item.carb}</div>
                   </div>
@@ -724,6 +757,18 @@ export default function App() {
               全体（全量）: {totals.kcal.toFixed(0)} kcal
             </div>
           </div>
+
+          {recipeAllergens.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 shadow-sm flex items-start gap-3 relative z-0">
+               <div className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center shrink-0 shadow-sm font-bold text-lg leading-none">
+                 !
+               </div>
+               <div>
+                  <div className="text-xs font-bold text-red-800 mb-1">含まれるアレルギー物質（28品目）</div>
+                  <div className="text-sm font-bold text-red-600">{recipeAllergens.join("、")}</div>
+               </div>
+            </div>
+          )}
 
           {/* 4成分グリッド */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -938,12 +983,42 @@ export default function App() {
                         <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">炭水化物 (g)</label>
                         <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.carb} onChange={(e) => setNewCustom({...newCustom, carb: e.target.value})} />
                       </div>
-                      <div className="flex items-end h-[58px]">
-                        <button type="submit" className="w-full bg-matcha-600 hover:bg-matcha-700 text-white py-2 rounded-xl text-sm font-bold transition-all shadow-md">
-                          登録決定
-                        </button>
-                      </div>
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-orange-700 mb-1 ml-1">アレルギー物質が含まれる場合は選択（タップ）</label>
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-white rounded-xl border border-orange-200 max-h-32 overflow-y-auto custom-scrollbar shadow-inner">
+                      {ALLERGENS_28.map(a => {
+                        const isSelected = newCustom.allergens.includes(a);
+                        return (
+                          <button
+                            key={a}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setNewCustom(prev => ({
+                                ...prev,
+                                allergens: isSelected ? prev.allergens.filter(x => x !== a) : [...prev.allergens, a]
+                              }));
+                            }}
+                            className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition-colors ${
+                              isSelected
+                                ? "bg-orange-500 text-white border-orange-600 shadow-sm"
+                                : "bg-orange-50/50 text-matcha-700 border-orange-200 hover:bg-orange-100"
+                            }`}
+                          >
+                            {a}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button type="submit" className="w-full bg-matcha-600 hover:bg-matcha-700 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-md">
+                      登録決定
+                    </button>
                   </div>
                 </form>
               </div>
@@ -966,8 +1041,13 @@ export default function App() {
                           )}
                           {item.name}
                         </div>
-                        <div className="text-[9px] text-matcha-400 font-sans mt-1 font-bold tracking-widest">
-                          {item.kcal}kcal / P:{item.protein} F:{item.fat} C:{item.carb}
+                        <div className="text-[9px] text-matcha-400 font-sans mt-1 font-bold tracking-widest flex items-center gap-2">
+                          <span>{item.kcal}kcal / P:{item.protein} F:{item.fat} C:{item.carb}</span>
+                          {(item.allergens && item.allergens.length > 0) && (
+                            <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-100">
+                              ｱﾚﾙｷﾞｰ: {item.allergens.join(",")}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <button type="button" onClick={(e) => deleteCustomIngredient(item.id, e)} className="text-sakura-300 hover:text-sakura-600 p-2 rounded-xl hover:bg-sakura-50 transition-colors">

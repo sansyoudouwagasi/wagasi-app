@@ -26,6 +26,25 @@ export default function App() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
 
+  // カスタム確認ダイアログ用
+  const [confirmState, setConfirmState] = useState({ isOpen: false, message: "", resolve: null });
+
+  const customConfirm = (message) => {
+    return new Promise((resolve) => {
+      setConfirmState({ isOpen: true, message, resolve });
+    });
+  };
+
+  const handleConfirmYes = () => {
+    if (confirmState.resolve) confirmState.resolve(true);
+    setConfirmState({ isOpen: false, message: "", resolve: null });
+  };
+
+  const handleConfirmNo = () => {
+    if (confirmState.resolve) confirmState.resolve(false);
+    setConfirmState({ isOpen: false, message: "", resolve: null });
+  };
+
   // 歩留まり（完成重量）用
   const [yieldWeight, setYieldWeight] = useState("");
   const [addedWater, setAddedWater] = useState(""); // 加水用
@@ -100,9 +119,11 @@ export default function App() {
     showStatus("マイ材料を登録しました");
   };
 
-  const deleteCustomIngredient = (id, e) => {
+  const deleteCustomIngredient = async (id, e) => {
     e.stopPropagation();
-    if (window.confirm("このマイ材料を削除しますか？")) {
+    const itemToDelete = customIngredients.find(item => item.id === id);
+    const name = itemToDelete ? itemToDelete.name : "このマイ材料";
+    if (await customConfirm(`マイ材料「${name}」を削除しますか？`)) {
       const updatedList = customIngredients.filter(item => item.id !== id);
       setCustomIngredients(updatedList);
       localStorage.setItem('wagashi_custom_ingredients', JSON.stringify(updatedList));
@@ -262,7 +283,7 @@ export default function App() {
         
         if (dependentRecipes.length > 0) {
           // alertやconfirmではユーザーをブロックするため好ましくないが、ここは要件に合わせてconfirmとする
-          if (window.confirm(`このレシピは他のレシピ（${dependentRecipes.join('、')}）の材料に利用されています。\nこれらのレシピ内の成分数値も最新に更新（連動）しますか？`)) {
+          if (await customConfirm(`このレシピは他のレシピ（${dependentRecipes.join('、')}）の材料に利用されています。\nこれらのレシピ内の成分数値も最新に更新（連動）しますか？`)) {
             dependentRecipes.forEach(depName => {
               newRecipes[depName].ingredients = newRecipes[depName].ingredients.map(ing => {
                 if (ing.id === ingredientId) {
@@ -307,9 +328,9 @@ export default function App() {
     }
   };
 
-  const deleteRecipe = (name, e) => {
+  const deleteRecipe = async (name, e) => {
     e.stopPropagation();
-    if (window.confirm(`「${name}」を削除してもよろしいですか？`)) {
+    if (await customConfirm(`レシピ「${name}」を削除してもよろしいですか？`)) {
       const newRecipes = { ...savedRecipes };
       delete newRecipes[name];
       localStorage.setItem('wagashi_recipes', JSON.stringify(newRecipes));
@@ -385,9 +406,9 @@ export default function App() {
     }
   }, [ingredients, recipeName, addedWater, servings, totals, per100g, perOne, rawTotalWeight, finalWeight, yieldWeight, pdfColorMode]);
 
-  const resetRecipe = () => {
+  const resetRecipe = async () => {
     if (ingredients.length > 0 || recipeName !== "" || addedWater !== "" || yieldWeight !== "") {
-      if (window.confirm("現在の入力内容をクリアして新規作成しますか？")) {
+      if (await customConfirm("現在の入力内容をクリアして新規作成しますか？")) {
         setIngredients([]);
         setSearch("");
         setServings(1);
@@ -431,6 +452,30 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* Confirm Modal */}
+      {confirmState.isOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-sumi/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-washi w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-matcha-100 relative">
+            <h3 className="font-serif font-bold text-lg text-matcha-900 mb-4">確認</h3>
+            <p className="text-sumi text-sm mb-6 whitespace-pre-wrap leading-relaxed">{confirmState.message}</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={handleConfirmNo}
+                className="flex-1 bg-white border border-matcha-200 hover:bg-matcha-50 text-matcha-700 py-3 rounded-xl font-bold transition-all shadow-sm"
+              >
+                キャンセル
+              </button>
+              <button 
+                onClick={handleConfirmYes}
+                className="flex-1 bg-sakura-600 hover:bg-sakura-700 text-white py-3 rounded-xl font-bold transition-all shadow-sm"
+              >
+                はい
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {statusMessage && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in-95 duration-200">

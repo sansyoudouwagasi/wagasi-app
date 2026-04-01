@@ -786,7 +786,7 @@ export default function App() {
             onChange={(e) => setPdfColorMode(e.target.value)}
             className="bg-white border text-center border-matcha-200 text-matcha-700 py-4 px-4 rounded-2xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-matcha-500/20 shadow-sm shrink-0"
           >
-            <option value="color">カラー印刷 🎨</option>
+            <option value="color">カラー保存 🎨</option>
             <option value="mono">白黒（モノクロ） 🖨️</option>
           </select>
           <button

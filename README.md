@@ -1,16 +1,21 @@
-# React + Vite
+# 和菓子向け栄養成分計算アプリ
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+本アプリは、和菓子店における栄養成分計算をスマートフォンで簡単に行うことを目的として開発しました。
 
-Currently, two official plugins are available:
+## デモ
+https://sansyoudouwagasi.github.io/wagasi-app/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 概要
+・スマートフォン対応
+・直感的な操作で栄養計算が可能
+・和菓子業界での実用を想定
 
-## React Compiler
+## 著作権・利用について
+本アプリの著作権は、私に帰属します。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+著作権者の許可なく、以下の行為を禁止します。
+・無断での使用
+・改変
+・商用利用
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+商用利用や導入をご検討の場合は、お問い合わせください。

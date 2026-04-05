@@ -4,5 +4,5 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/wagasi-app/', // GitHub Pages用のリポジトリ名
+  base: process.env.VERCEL ? '/' : '/wagasi-app/', // Vercelでは'/'、GitHub Pagesでは'/wagasi-app/'
 })

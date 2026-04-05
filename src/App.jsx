@@ -50,7 +50,7 @@ export default function App() {
   const [yieldWeight, setYieldWeight] = useState("");
   const [addedWater, setAddedWater] = useState(""); // 加水用
   const [saveAsIngredient, setSaveAsIngredient] = useState(false); // マイ材料として登録するか
-  
+
   // 結果表示の切り替え
   const [displayMode, setDisplayMode] = useState("perPiece"); // "perPiece" | "per100g"
   const [pdfGenerating, setPdfGenerating] = useState(false);
@@ -76,12 +76,12 @@ export default function App() {
           });
         }
       }
-      
+
       const customData = localStorage.getItem('wagashi_custom_ingredients');
       if (customData) {
         setCustomIngredients(JSON.parse(customData));
       }
-    } catch(e) {
+    } catch (e) {
       console.error("データの読み込みに失敗しました", e);
     }
   }, []);
@@ -99,7 +99,7 @@ export default function App() {
       window.alert(`「${trimmedName}」はすでに登録されています。\n別の名前を指定してください。`);
       return;
     }
-    
+
     const ingredient = {
       id: `custom-${Date.now()}`,
       name: trimmedName,
@@ -111,11 +111,11 @@ export default function App() {
       allergens: newCustom.allergens || [],
       isCustom: true
     };
-    
+
     const updatedList = [...customIngredients, ingredient];
     setCustomIngredients(updatedList);
     localStorage.setItem('wagashi_custom_ingredients', JSON.stringify(updatedList));
-    
+
     setNewCustom({ name: "", kcal: "", protein: "", fat: "", carb: "", salt: "", allergens: [] });
     setShowCustomForm(false);
     showStatus("マイ材料を登録しました");
@@ -148,7 +148,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `wagashi_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `wagashi_backup_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showStatus("バックアップを保存しました");
@@ -240,11 +240,11 @@ export default function App() {
     setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       let newCustomIngredients = [...customIngredients];
       let ingredientId = null;
       let didUpdateIngredient = false;
-      
+
       if (saveAsIngredient) {
         const existingIndex = customIngredients.findIndex(ci => ci.type === 'recipe' && ci.linkedRecipe === recipeName);
         const ingredientData = {
@@ -261,7 +261,7 @@ export default function App() {
           linkedRecipe: recipeName
         };
         ingredientId = ingredientData.id;
-        
+
         if (existingIndex >= 0) {
           newCustomIngredients[existingIndex] = ingredientData;
           didUpdateIngredient = true;
@@ -289,11 +289,11 @@ export default function App() {
 
       if (didUpdateIngredient && ingredientId) {
         // 他のレシピでこの材料を使っているものを探す
-        const dependentRecipes = Object.keys(newRecipes).filter(key => 
-          key !== recipeName && 
+        const dependentRecipes = Object.keys(newRecipes).filter(key =>
+          key !== recipeName &&
           newRecipes[key].ingredients.some(ing => ing.id === ingredientId)
         );
-        
+
         if (dependentRecipes.length > 0) {
           // alertやconfirmではユーザーをブロックするため好ましくないが、ここは要件に合わせてconfirmとする
           if (await customConfirm(`このレシピは他のレシピ（${dependentRecipes.join('、')}）の材料に利用されています。\nこれらのレシピ内の成分数値も最新に更新（連動）しますか？`)) {
@@ -355,10 +355,10 @@ export default function App() {
 
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
-    
+
     // 検索クエリをひらがな・カタカナ・和菓子同義語で拡張
     const queries = expandSearchQuery(search);
-    
+
     const matchItem = (item) => {
       const name = item.name.toLowerCase();
       const kana = (item.kana || "").toLowerCase();
@@ -367,10 +367,10 @@ export default function App() {
 
     // マイ材料から検索
     const customMatches = customIngredients.filter(matchItem);
-    
+
     // 標準データから検索
     const standardMatches = mextData.filter(matchItem);
-    
+
     return [...customMatches, ...standardMatches].slice(0, 15);
   }, [search, customIngredients]);
 
@@ -449,17 +449,17 @@ export default function App() {
           <h1 className="font-serif font-bold text-lg tracking-wider text-matcha-900 hidden sm:block">和菓子栄養計算</h1>
         </div>
         <div className="flex gap-2">
-          <button 
-            type="button" 
-            onClick={() => setShowBackupModal(true)} 
+          <button
+            type="button"
+            onClick={() => setShowBackupModal(true)}
             className="flex items-center gap-1.5 p-2 bg-white hover:bg-slate-50 text-slate-600 rounded-full transition-colors border border-slate-200 shadow-sm pr-3"
           >
             <Download size={20} />
             <span className="text-xs font-bold">バックアップ</span>
           </button>
-          <button 
-            type="button" 
-            onClick={() => setShowHelpModal(true)} 
+          <button
+            type="button"
+            onClick={() => setShowHelpModal(true)}
             className="flex items-center gap-1.5 p-2 bg-white hover:bg-matcha-50 text-matcha-600 rounded-full transition-colors border border-matcha-100 shadow-sm pr-3"
           >
             <HelpCircle size={20} />
@@ -475,13 +475,13 @@ export default function App() {
             <h3 className="font-serif font-bold text-lg text-matcha-900 mb-4">確認</h3>
             <p className="text-sumi text-sm mb-6 whitespace-pre-wrap leading-relaxed">{confirmState.message}</p>
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={handleConfirmNo}
                 className="flex-1 bg-white border border-matcha-200 hover:bg-matcha-50 text-matcha-700 py-3 rounded-xl font-bold transition-all shadow-sm"
               >
                 キャンセル
               </button>
-              <button 
+              <button
                 onClick={handleConfirmYes}
                 className="flex-1 bg-sakura-600 hover:bg-sakura-700 text-white py-3 rounded-xl font-bold transition-all shadow-sm"
               >
@@ -506,11 +506,11 @@ export default function App() {
       <main className="max-w-md mx-auto p-4 space-y-6">
         {/* レシピ名表示 */}
         {recipeName && (
-           <div className="text-center">
-             <span className="bg-sakura-100 text-sakura-800 text-xs font-bold px-3 py-1 rounded-full border border-sakura-200 shadow-sm">
-               編集中: {recipeName}
-             </span>
-           </div>
+          <div className="text-center">
+            <span className="bg-sakura-100 text-sakura-800 text-xs font-bold px-3 py-1 rounded-full border border-sakura-200 shadow-sm">
+              編集中: {recipeName}
+            </span>
+          </div>
         )}
 
         <div className="bg-sakura-50 border border-sakura-200 p-4 rounded-xl flex gap-3 items-start shadow-sm">
@@ -558,16 +558,16 @@ export default function App() {
                       {item.name}
                     </div>
                     <div className="text-[11px] text-matcha-400 font-sans mt-0.5 font-bold tracking-wide">
-                      {item.isCustom 
+                      {item.isCustom
                         ? (item.type === 'recipe' ? <span className="text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded mr-1">🔗 レシピ連動</span> : <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mr-1">🏷️ 自家製手動</span>)
                         : null}
                       {!item.isCustom && `ID: ${item.id} • `}{item.kcal}kcal / 100g
                       {(() => {
                         const algs = item.allergens || detectAllergensFromText(item.name);
                         return algs.length > 0 ? (
-                           <span className="ml-2 bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-[9px] border border-red-200">
-                             アレルギー: {algs.join("・")}
-                           </span>
+                          <span className="ml-2 bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-[9px] border border-red-200">
+                            アレルギー: {algs.join("・")}
+                          </span>
                         ) : null;
                       })()}
                     </div>
@@ -608,9 +608,9 @@ export default function App() {
                       {(() => {
                         const algs = item.allergens || detectAllergensFromText(item.name);
                         return algs.length > 0 ? (
-                           <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[9px] border border-red-200">
-                             ⚠️ {algs.join("・")}
-                           </span>
+                          <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[9px] border border-red-200">
+                            ⚠️ {algs.join("・")}
+                          </span>
                         ) : null;
                       })()}
                     </div>
@@ -629,7 +629,7 @@ export default function App() {
                       />
                       <span className="absolute -bottom-4 right-1 text-[9px] font-sans font-bold text-matcha-300">グラム</span>
                     </div>
-                    <button 
+                    <button
                       type="button"
                       onClick={() => removeIngredient(item.uid)}
                       className="text-sakura-300 hover:text-sakura-600 transition-colors p-2"
@@ -645,7 +645,7 @@ export default function App() {
 
         {/* 分量設定 */}
         <div className="bg-white p-5 rounded-3xl border border-matcha-100 shadow-sm space-y-4 relative z-0">
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-blue-50 p-2.5 rounded-xl text-blue-500">
@@ -693,9 +693,9 @@ export default function App() {
               <span className="absolute -bottom-4 right-1 text-[9px] font-sans font-bold text-matcha-300">グラム</span>
             </div>
           </div>
-          
+
           <div className="h-px bg-matcha-50 w-full" />
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-azuki-50 p-2.5 rounded-xl text-azuki-600">
@@ -724,17 +724,17 @@ export default function App() {
 
         {/* 結果表示 */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-matcha-100 space-y-5 relative z-0">
-          
+
           <div className="flex items-center justify-between">
             <h3 className="font-serif font-black text-matcha-900 text-lg">栄養成分</h3>
             <div className="bg-washi rounded-xl p-1 flex gap-1 border border-matcha-100 shadow-inner">
-              <button 
+              <button
                 onClick={() => setDisplayMode("perPiece")}
                 className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${displayMode === "perPiece" ? "bg-white text-matcha-700 shadow-sm border border-matcha-100" : "text-matcha-400 hover:text-matcha-600"}`}
               >
                 1個あたり
               </button>
-              <button 
+              <button
                 onClick={() => setDisplayMode("per100g")}
                 className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all ${displayMode === "per100g" ? "bg-white text-matcha-700 shadow-sm border border-matcha-100" : "text-matcha-400 hover:text-matcha-600"}`}
               >
@@ -760,13 +760,13 @@ export default function App() {
 
           {recipeAllergens.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4 shadow-sm flex items-start gap-3 relative z-0">
-               <div className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center shrink-0 shadow-sm font-bold text-lg leading-none">
-                 !
-               </div>
-               <div>
-                  <div className="text-xs font-bold text-red-800 mb-1">含まれるアレルギー物質（28品目）</div>
-                  <div className="text-sm font-bold text-red-600">{recipeAllergens.join("、")}</div>
-               </div>
+              <div className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center shrink-0 shadow-sm font-bold text-lg leading-none">
+                !
+              </div>
+              <div>
+                <div className="text-xs font-bold text-red-800 mb-1">含まれるアレルギー物質（28品目）</div>
+                <div className="text-sm font-bold text-red-600">{recipeAllergens.join("、")}</div>
+              </div>
             </div>
           )}
 
@@ -816,7 +816,7 @@ export default function App() {
       {/* Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-matcha-100 z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <div className="max-w-md mx-auto grid grid-cols-3 gap-2">
-          <button 
+          <button
             type="button"
             onClick={resetRecipe}
             className="flex flex-col items-center justify-center bg-white hover:bg-matcha-50 border border-matcha-200 text-matcha-700 py-3 rounded-2xl shadow-sm active:scale-95 transition-all group shrink-0"
@@ -824,7 +824,7 @@ export default function App() {
             <Plus size={24} className="mb-0.5 group-hover:scale-110 transition-transform" />
             <span className="text-[10px] sm:text-[12px] font-bold w-full text-center">新規作成</span>
           </button>
-          <button 
+          <button
             type="button"
             onClick={() => setShowLoadModal(true)}
             className="flex flex-col items-center justify-center bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 py-3 rounded-2xl shadow-sm active:scale-95 transition-all group shrink-0"
@@ -832,7 +832,7 @@ export default function App() {
             <FolderOpen size={24} className="mb-0.5 group-hover:scale-110 transition-transform" />
             <span className="text-[10px] sm:text-[12px] font-bold w-full text-center">レシピを開く</span>
           </button>
-          <button 
+          <button
             type="button"
             onClick={openSaveModal}
             className="flex flex-col items-center justify-center bg-matcha-600 hover:bg-matcha-700 border border-matcha-700 text-white py-3 rounded-2xl shadow-md active:scale-95 transition-all group shrink-0"
@@ -847,7 +847,7 @@ export default function App() {
       {showSaveModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-sumi/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-washi w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-matcha-100 relative">
-            <button type="button" onClick={() => setShowSaveModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-sumi p-1"><X size={20}/></button>
+            <button type="button" onClick={() => setShowSaveModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-sumi p-1"><X size={20} /></button>
             <h3 className="font-serif font-bold text-lg text-matcha-900 mb-5">レシピを保存する</h3>
             <form onSubmit={confirmSave} className="space-y-5">
               <div>
@@ -863,8 +863,8 @@ export default function App() {
               </div>
 
               <label className="flex items-center gap-3 p-3 bg-matcha-50 rounded-xl border border-matcha-100 cursor-pointer hover:bg-matcha-100 transition-colors">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={saveAsIngredient}
                   onChange={(e) => setSaveAsIngredient(e.target.checked)}
                   className="w-5 h-5 text-matcha-600 rounded focus:ring-matcha-500 border-matcha-300"
@@ -891,16 +891,16 @@ export default function App() {
       {showLoadModal && (
         <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:items-center sm:justify-center p-0 sm:p-4 bg-sumi/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-washi w-full sm:max-w-sm rounded-[2rem] sm:rounded-[2rem] p-6 shadow-2xl border-t sm:border border-matcha-100 relative max-h-[85vh] flex flex-col">
-            <button type="button" onClick={() => setShowLoadModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-sumi p-1"><X size={20}/></button>
+            <button type="button" onClick={() => setShowLoadModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-sumi p-1"><X size={20} /></button>
             <h3 className="font-serif font-bold text-lg text-matcha-900 mb-5 shrink-0 ml-1">保存されたレシピ</h3>
-            
+
             <div className="overflow-y-auto space-y-3 flex-1 pb-4 px-1 custom-scrollbar">
               {Object.keys(savedRecipes).length === 0 ? (
-                 <div className="text-center py-10 bg-white/50 rounded-2xl border border-matcha-50">
-                   <p className="text-sm font-sans font-bold text-matcha-400">保存されたレシピはありません</p>
-                 </div>
+                <div className="text-center py-10 bg-white/50 rounded-2xl border border-matcha-50">
+                  <p className="text-sm font-sans font-bold text-matcha-400">保存されたレシピはありません</p>
+                </div>
               ) : (
-                Object.keys(savedRecipes).sort((a,b) => savedRecipes[b].updatedAt - savedRecipes[a].updatedAt).map(name => (
+                Object.keys(savedRecipes).sort((a, b) => savedRecipes[b].updatedAt - savedRecipes[a].updatedAt).map(name => (
                   <div key={name} className="bg-white border border-matcha-100 p-1 pl-4 rounded-2xl hover:border-matcha-400 transition-colors flex justify-between items-center group shadow-sm">
                     <button
                       type="button"
@@ -912,7 +912,7 @@ export default function App() {
                         {new Date(savedRecipes[name].updatedAt).toLocaleString('ja-JP')} • {savedRecipes[name].ingredients?.length || 0}品
                       </div>
                     </button>
-                    <button 
+                    <button
                       type="button"
                       onClick={(e) => deleteRecipe(name, e)}
                       className="p-3 text-sakura-300 hover:text-sakura-600 transition-colors rounded-xl m-1"
@@ -932,12 +932,12 @@ export default function App() {
       {showCustomModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-sumi/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-washi w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-matcha-100 relative max-h-[90vh] flex flex-col">
-            <button type="button" onClick={() => setShowCustomModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-sumi p-1 z-10"><X size={20}/></button>
+            <button type="button" onClick={() => setShowCustomModal(false)} className="absolute top-5 right-5 text-gray-400 hover:text-sumi p-1 z-10"><X size={20} /></button>
             <h3 className="font-serif font-bold text-lg text-matcha-900 mb-5 shrink-0">マイ材料の管理</h3>
-            
+
             {!showCustomForm ? (
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setShowCustomForm(true)}
                 className="w-full bg-white border border-matcha-200 hover:bg-matcha-50 text-matcha-700 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm mb-4 shrink-0"
               >
@@ -955,7 +955,7 @@ export default function App() {
                       required
                       className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 focus:ring-2 focus:ring-matcha-500 focus:outline-none text-sm font-bold text-sumi"
                       value={newCustom.name}
-                      onChange={(e) => setNewCustom({...newCustom, name: e.target.value})}
+                      onChange={(e) => setNewCustom({ ...newCustom, name: e.target.value })}
                       placeholder="例: こだわり粒あん"
                     />
                   </div>
@@ -963,25 +963,25 @@ export default function App() {
                     <div className="space-y-3">
                       <div>
                         <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">エネルギー (kcal)</label>
-                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.kcal} onChange={(e) => setNewCustom({...newCustom, kcal: e.target.value})} />
+                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.kcal} onChange={(e) => setNewCustom({ ...newCustom, kcal: e.target.value })} />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">脂質 (g)</label>
-                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.fat} onChange={(e) => setNewCustom({...newCustom, fat: e.target.value})} />
+                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.fat} onChange={(e) => setNewCustom({ ...newCustom, fat: e.target.value })} />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">食塩相当量 (g)</label>
-                        <input type="number" step="0.01" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.salt} onChange={(e) => setNewCustom({...newCustom, salt: e.target.value})} />
+                        <input type="number" step="0.01" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.salt} onChange={(e) => setNewCustom({ ...newCustom, salt: e.target.value })} />
                       </div>
                     </div>
                     <div className="space-y-3">
                       <div>
                         <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">たんぱく質 (g)</label>
-                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.protein} onChange={(e) => setNewCustom({...newCustom, protein: e.target.value})} />
+                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.protein} onChange={(e) => setNewCustom({ ...newCustom, protein: e.target.value })} />
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold text-matcha-600 mb-1 ml-1">炭水化物 (g)</label>
-                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.carb} onChange={(e) => setNewCustom({...newCustom, carb: e.target.value})} />
+                        <input type="number" step="0.1" className="w-full bg-white border border-matcha-200 rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-matcha-500" value={newCustom.carb} onChange={(e) => setNewCustom({ ...newCustom, carb: e.target.value })} />
                       </div>
                     </div>
                   </div>
@@ -1002,11 +1002,10 @@ export default function App() {
                                 allergens: isSelected ? prev.allergens.filter(x => x !== a) : [...prev.allergens, a]
                               }));
                             }}
-                            className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition-colors ${
-                              isSelected
-                                ? "bg-orange-500 text-white border-orange-600 shadow-sm"
-                                : "bg-orange-50/50 text-matcha-700 border-orange-200 hover:bg-orange-100"
-                            }`}
+                            className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition-colors ${isSelected
+                              ? "bg-orange-500 text-white border-orange-600 shadow-sm"
+                              : "bg-orange-50/50 text-matcha-700 border-orange-200 hover:bg-orange-100"
+                              }`}
                           >
                             {a}
                           </button>
@@ -1070,14 +1069,14 @@ export default function App() {
                 <HelpCircle className="text-matcha-600" size={24} />
                 <h3 className="font-serif font-bold text-xl text-matcha-900">使い方ガイド</h3>
               </div>
-              <button type="button" onClick={() => setShowHelpModal(false)} className="text-gray-400 hover:text-sumi p-1 bg-white hover:bg-matcha-50 rounded-full transition-colors shadow-sm"><X size={20}/></button>
+              <button type="button" onClick={() => setShowHelpModal(false)} className="text-gray-400 hover:text-sumi p-1 bg-white hover:bg-matcha-50 rounded-full transition-colors shadow-sm"><X size={20} /></button>
             </div>
-            
+
             <div className="overflow-y-auto p-5 space-y-6 custom-scrollbar flex-1 bg-washi/50">
               {/* 基本の使い方 */}
               <div className="space-y-2">
                 <h4 className="font-bold text-matcha-800 flex items-center gap-2 text-sm">
-                  <span className="bg-matcha-100 text-matcha-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
+                  <span className="bg-matcha-100 text-matcha-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
                   材料を選ぶ
                 </h4>
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-matcha-50 text-sm font-sans text-sumi leading-relaxed">
@@ -1088,7 +1087,7 @@ export default function App() {
               {/* マイ材料とレシピ連携 */}
               <div className="space-y-2">
                 <h4 className="font-bold text-orange-700 flex items-center gap-2 text-sm">
-                  <span className="bg-orange-100 text-orange-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> 
+                  <span className="bg-orange-100 text-orange-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
                   レシピの「材料化」と連携
                 </h4>
                 <div className="bg-orange-50/50 p-4 rounded-2xl shadow-sm border border-orange-100 text-sm font-sans text-sumi leading-relaxed">
@@ -1102,13 +1101,13 @@ export default function App() {
               {/* 歩留まり・加水量 */}
               <div className="space-y-2">
                 <h4 className="font-bold text-blue-700 flex items-center gap-2 text-sm">
-                  <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span> 
+                  <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
                   加水と歩留まり（完成重量）
                 </h4>
                 <div className="bg-blue-50/50 p-4 rounded-2xl shadow-sm border border-blue-100 text-sm font-sans text-sumi leading-relaxed">
                   <ul className="space-y-3">
-                    <li><strong className="text-blue-800 border-b border-blue-200 pb-0.5">加水量：</strong><br/>炊く前の水など、加熱前に生重量へ足される水分です。</li>
-                    <li><strong className="text-blue-800 border-b border-blue-200 pb-0.5">完成後の総重量：</strong><br/>煮詰めた後などの最終的な重量（歩留まり）です。入力するとより正確に100gあたりの成分を算出します（水分の蒸発等を考慮）。</li>
+                    <li><strong className="text-blue-800 border-b border-blue-200 pb-0.5">加水量：</strong><br />炊く前の水など、加熱前に生重量へ足される水分です。</li>
+                    <li><strong className="text-blue-800 border-b border-blue-200 pb-0.5">完成後の総重量：</strong><br />煮詰めた後などの最終的な重量（歩留まり）です。入力するとより正確に100gあたりの成分を算出します（水分の蒸発等を考慮）。</li>
                   </ul>
                   <p className="mt-2 text-[11px] font-bold text-blue-800 bg-blue-100 p-2.5 rounded-xl border border-blue-200">
                     💡 計算結果エリアの右上「1個あたり/100gあたり」ボタンで表示を切り替えられます。
@@ -1119,7 +1118,7 @@ export default function App() {
               {/* 保存と出力 */}
               <div className="space-y-2">
                 <h4 className="font-bold text-matcha-800 flex items-center gap-2 text-sm">
-                  <span className="bg-matcha-100 text-matcha-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span> 
+                  <span className="bg-matcha-100 text-matcha-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span>
                   保存とPDF帳票
                 </h4>
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-matcha-50 text-sm font-sans text-sumi leading-relaxed">
@@ -1140,12 +1139,12 @@ export default function App() {
                 <Download className="text-slate-600" size={24} />
                 <h3 className="font-serif font-bold text-xl text-slate-800">データバックアップと復元</h3>
               </div>
-              <button type="button" onClick={() => setShowBackupModal(false)} className="text-gray-400 hover:text-sumi p-1 bg-white hover:bg-slate-50 rounded-full transition-colors shadow-sm"><X size={20}/></button>
+              <button type="button" onClick={() => setShowBackupModal(false)} className="text-gray-400 hover:text-sumi p-1 bg-white hover:bg-slate-50 rounded-full transition-colors shadow-sm"><X size={20} /></button>
             </div>
-            
+
             <div className="overflow-y-auto p-5 space-y-6 custom-scrollbar flex-1 bg-washi/50">
               <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-sm font-sans text-sumi leading-relaxed space-y-5">
-                
+
                 {/* 保存セクション */}
                 <div>
                   <h4 className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-1 flex items-center gap-1.5">
@@ -1161,7 +1160,7 @@ export default function App() {
                       <li><strong>保存先:</strong> お使いの端末の「ダウンロード」フォルダや「ファイル」アプリ内に保存されます。</li>
                     </ul>
                   </div>
-                  <button 
+                  <button
                     onClick={exportData}
                     className="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors active:scale-95"
                   >
@@ -1197,7 +1196,7 @@ export default function App() {
   );
 }
 
-function NutrientCard({ label, value, unit, bgColor, borderColor, badgeColor, textColor, badgeText="text-white" }) {
+function NutrientCard({ label, value, unit, bgColor, borderColor, badgeColor, textColor, badgeText = "text-white" }) {
   return (
     <div className={`${bgColor} border-2 ${borderColor} rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm relative`}>
       <div className={`${badgeColor} ${badgeText} px-4 py-1.5 rounded-full text-[11px] font-bold tracking-widest mb-2 shadow-[0_2px_10px_rgba(0,0,0,0.05)] w-fit`}>

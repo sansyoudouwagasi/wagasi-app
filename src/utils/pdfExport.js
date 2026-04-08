@@ -24,12 +24,12 @@ export async function exportRecipePdf({
 
   // テーマカラー設定（カラーと白黒）
   const theme = {
-    headerBg: isMono ? "#333333" : "linear-gradient(135deg, #2d5016, #3a6b1e)",
+    headerBg: isMono ? "#333333" : "linear-gradient(135deg, #1e3c72, #2a5298)",
     headerText: "#ffffff",
-    labelColor: isMono ? "#333333" : "#3a6b1e",
+    labelColor: isMono ? "#333333" : "#2a5298",
     borderColor: isMono ? "#999999" : "#d4d0c8",
     bgLight: isMono ? "#f5f5f5" : "#f8f7f4",
-    nutrientsBorder: isMono ? "2px solid #555" : "2px solid #3a6b1e",
+    nutrientsBorder: isMono ? "2px solid #555" : "2px solid #2a5298",
     yieldBg: isMono ? "#666" : "linear-gradient(135deg, #c0392b, #a93226)",
     
     // PFCカラー
@@ -62,7 +62,7 @@ export async function exportRecipePdf({
   container.innerHTML = `
     <!-- ヘッダー -->
     <div style="background: ${theme.headerBg}; border-radius: 12px; padding: 24px 32px; margin-bottom: 24px; color: ${theme.headerText};">
-      <div style="font-size: 11px; letter-spacing: 2px; opacity: 0.9; margin-bottom: 4px; font-weight: 700;">和菓子栄養成分表</div>
+      <div style="font-size: 11px; letter-spacing: 2px; opacity: 0.9; margin-bottom: 4px; font-weight: 700;">栄養成分計算表</div>
       <div style="font-size: 28px; font-weight: 900; letter-spacing: 2px; line-height: 1.3;">${recipeName || "無題のレシピ"}</div>
       <div style="font-size: 12px; opacity: 0.8; margin-top: 8px; font-weight: 600;">作成日: ${dateStr}</div>
     </div>
@@ -181,7 +181,7 @@ export async function exportRecipePdf({
     ` : ''}
 
     <div style="text-align: right; margin-top: 16px; font-size: 10px; color: #999; font-weight: 600;">
-      日本食品標準成分表（八訂）準拠 ─ 和菓子栄養計算アプリ
+      日本食品標準成分表（八訂）準拠 ─ 栄養成分計算アプリ
     </div>
   `;
 

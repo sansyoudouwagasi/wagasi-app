@@ -4,8 +4,8 @@
   "description": "様々な料理や商品の栄養成分を計算するアプリ",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#faf5f0",
-  "theme_color": "#e8a0b4",
+  "background_color": "#ffffff",
+  "theme_color": "#1e3c72",
   "icons": [
     {
       "src": "icon.png",

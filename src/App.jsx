@@ -356,7 +356,7 @@ export default function App() {
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
 
-    // 検索クエリをひらがな・カタカナ・和菓子同義語で拡張
+    // 検索クエリをひらがな・カタカナ・同義語で拡張
     const queries = expandSearchQuery(search);
 
     const matchItem = (item) => {
@@ -446,7 +446,7 @@ export default function App() {
           <div className="bg-matcha-600 p-1.5 rounded-lg">
             <Calculator className="text-white" size={20} />
           </div>
-          <h1 className="font-serif font-bold text-lg tracking-wider text-matcha-900 hidden sm:block">和菓子栄養計算</h1>
+          <h1 className="font-serif font-bold text-lg tracking-wider text-matcha-900 hidden sm:block">栄養成分計算</h1>
         </div>
         <div className="flex gap-2">
           <button
@@ -516,7 +516,7 @@ export default function App() {
         <div className="bg-sakura-50 border border-sakura-200 p-4 rounded-xl flex gap-3 items-start shadow-sm">
           <BookOpen className="text-sakura-500 shrink-0 mt-0.5" size={20} />
           <p className="text-[12px] font-serif text-sumi leading-relaxed">
-            本アプリは<strong className="text-sakura-800">日本食品標準成分表（八訂）</strong>のデータを参照しています。和菓子の繊細な成分変化に対応可能です。
+            本アプリは<strong className="text-sakura-800">日本食品標準成分表（八訂）</strong>のデータを参照しています。様々な料理や商品の成分計算に対応可能です。
           </p>
         </div>
 
@@ -528,7 +528,7 @@ export default function App() {
               <input
                 type="text"
                 className="w-full bg-white border border-matcha-200 rounded-2xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-matcha-500/20 focus:border-matcha-500 shadow-sm transition-all text-sumi placeholder:text-matcha-300 font-serif"
-                placeholder="和菓子の材料を検索 (例: あずき)"
+                placeholder="材料を検索 (例: 小麦粉、卵、玉ねぎ)"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -1080,7 +1080,7 @@ export default function App() {
                   材料を選ぶ
                 </h4>
                 <div className="bg-white p-4 rounded-2xl shadow-sm border border-matcha-50 text-sm font-sans text-sumi leading-relaxed">
-                  <p>「和菓子の材料を検索」窓に「あずき」等を入力し、リストから追加します。その後、使用するグラム数を入力すると自動的に成分が計算されます。</p>
+                  <p>「材料を検索」窓に「小麦粉」等を入力し、リストから追加します。その後、使用するグラム数を入力すると自動的に成分が計算されます。</p>
                 </div>
               </div>
 
@@ -1091,9 +1091,9 @@ export default function App() {
                   レシピの「材料化」と連携
                 </h4>
                 <div className="bg-orange-50/50 p-4 rounded-2xl shadow-sm border border-orange-100 text-sm font-sans text-sumi leading-relaxed">
-                  <p>完成したレシピ（例：自家製あんこ）を保存する時に<strong>「マイ材料として登録」</strong>にチェックを入れると、100gあたりの成分が材料として保存されます。</p>
+                  <p>完成したレシピ（例：自家製あんこ、カレールー）を保存する時に<strong>「マイ材料として登録」</strong>にチェックを入れると、100gあたりの成分が材料として保存されます。</p>
                   <p className="mt-2 text-[11px] font-bold text-orange-800 bg-orange-100 p-2.5 rounded-xl border border-orange-200">
-                    💡 後から「自家製あんこ」のレシピ内容を修正・保存すると、それを使っている別の和菓子レシピも自動的に最新の成分へと一括更新（連動）されるか、システムが確認を出してくれます。
+                    💡 後から「自家製あんこ」等のレシピ内容を修正・保存すると、それを使っている別のレシピも自動的に最新の成分へと一括更新（連動）されるか、システムが確認を出してくれます。
                   </p>
                 </div>
               </div>

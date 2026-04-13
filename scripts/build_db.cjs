@@ -32,6 +32,14 @@ try {
 
   console.log(`Indices -> Kcal: ${colKcal}, Prot: ${colProtein}, Fat: ${colFat}, Carb: ${colCarb}, Salt: ${colSalt}`);
 
+  const parseValue = (val) => {
+    if (typeof val === 'number') return val;
+    if (!val) return 0;
+    const cleaned = val.toString().replace(/[()]/g, '').trim();
+    if (cleaned === 'Tr' || cleaned === '-' || cleaned === '*') return 0;
+    return parseFloat(cleaned) || 0;
+  };
+
   const output = [];
 
   // Data starts at row 12 (index 12)
@@ -43,11 +51,11 @@ try {
     // MEXT names often have full-width space or strange formats, simply clean it
     let name = row[colName].replace(/　/g, '/');
     
-    const kcal = parseFloat(row[colKcal]) || 0;
-    const protein = parseFloat(row[colProtein]) || 0;
-    const fat = parseFloat(row[colFat]) || 0;
-    const carb = parseFloat(row[colCarb]) || 0;
-    const salt = parseFloat(row[colSalt]) || 0;
+    const kcal = parseValue(row[colKcal]);
+    const protein = parseValue(row[colProtein]);
+    const fat = parseValue(row[colFat]);
+    const carb = parseValue(row[colCarb]);
+    const salt = parseValue(row[colSalt]);
 
     output.push({
       id,

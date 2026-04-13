@@ -1156,7 +1156,7 @@ export default function App() {
                   </p>
                   <div className="bg-slate-50 rounded-xl p-3 mb-4 text-[11px] text-slate-600 border border-slate-100">
                     <ul className="list-disc pl-4 space-y-1.5">
-                      <li><strong>ファイル名:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-800">wagashi_backup_今日の日付.json</code></li>
+                      <li><strong>ファイル名:</strong> <code className="bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-800">recipe_backup_今日の日付.json</code></li>
                       <li><strong>保存先:</strong> お使いの端末の「ダウンロード」フォルダや「ファイル」アプリ内に保存されます。</li>
                     </ul>
                   </div>

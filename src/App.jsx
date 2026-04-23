@@ -371,7 +371,8 @@ export default function App() {
     // 標準データから検索
     const standardMatches = mextData.filter(matchItem);
 
-    return [...customMatches, ...standardMatches].slice(0, 15);
+    // 検索候補を最大50件まで取得し、スクロールで確認できるようにする
+    return [...customMatches, ...standardMatches].slice(0, 50);
   }, [search, customIngredients]);
 
   const addIngredient = (food) => {
@@ -544,7 +545,7 @@ export default function App() {
           </div>
 
           {searchResults.length > 0 && (
-            <div className="absolute top-14 left-0 right-0 mt-2 bg-white border border-matcha-100 rounded-2xl shadow-2xl z-20 overflow-hidden ring-1 ring-black/5 animate-in zoom-in-95 duration-100">
+            <div className="absolute top-14 left-0 right-0 mt-2 bg-white border border-matcha-100 rounded-2xl shadow-2xl z-20 overflow-y-auto max-h-[260px] overscroll-contain ring-1 ring-black/5 animate-in zoom-in-95 duration-100">
               {searchResults.map(item => (
                 <button
                   type="button"

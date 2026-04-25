@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star, Droplets, FileDown, HelpCircle, Download, Upload } from "lucide-react";
 import mextData from "./data/mext_data.json";
+import makerData from "./data/maker_data.json";
 import { expandSearchQuery } from "./utils/searchUtils";
 import { exportRecipePdf } from "./utils/pdfExport";
 import { ALLERGENS_28, detectAllergensFromText } from "./utils/allergenUtils";
@@ -8,6 +9,7 @@ import { ALLERGENS_28, detectAllergensFromText } from "./utils/allergenUtils";
 export default function App() {
   const [ingredients, setIngredients] = useState([]);
   const [search, setSearch] = useState("");
+  const [searchTab, setSearchTab] = useState("all");
   const [servings, setServings] = useState(1);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
@@ -366,14 +368,24 @@ export default function App() {
     };
 
     // マイ材料から検索
-    const customMatches = customIngredients.filter(matchItem);
+    const customMatches = customIngredients.filter(matchItem).map(item => ({...item, source: 'custom'}));
 
     // 標準データから検索
-    const standardMatches = mextData.filter(matchItem);
+    const standardMatches = mextData.filter(matchItem).map(item => ({...item, source: 'mext'}));
+
+    // メーカー商品から検索
+    const makerMatches = makerData.filter(matchItem).map(item => ({...item, source: 'maker'}));
+
+    let allMatches = [...customMatches, ...makerMatches, ...standardMatches];
+    
+    // タブでフィルタリング
+    if (searchTab === 'mext') allMatches = allMatches.filter(item => item.source === 'mext');
+    if (searchTab === 'maker') allMatches = allMatches.filter(item => item.source === 'maker');
+    if (searchTab === 'custom') allMatches = allMatches.filter(item => item.source === 'custom');
 
     // 検索候補を最大50件まで取得し、スクロールで確認できるようにする
-    return [...customMatches, ...standardMatches].slice(0, 50);
-  }, [search, customIngredients]);
+    return allMatches.slice(0, 50);
+  }, [search, customIngredients, searchTab]);
 
   const addIngredient = (food) => {
     setIngredients([...ingredients, { ...food, amount: 100, uid: Math.random().toString(36).substr(2, 9) }]);
@@ -544,8 +556,30 @@ export default function App() {
             </button>
           </div>
 
+          {/* タブ */}
+          <div className="flex gap-1 mt-3 overflow-x-auto pb-1 scrollbar-hide snap-x">
+            {[
+              { id: 'all', label: 'すべて' },
+              { id: 'mext', label: '標準データ' },
+              { id: 'maker', label: '商品名検索' },
+              { id: 'custom', label: 'マイ材料' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setSearchTab(tab.id)}
+                className={`px-4 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all snap-start ${
+                  searchTab === tab.id 
+                    ? 'bg-matcha-600 text-white shadow-md shadow-matcha-500/20' 
+                    : 'bg-white text-matcha-600 border border-matcha-100 hover:bg-matcha-50'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
           {searchResults.length > 0 && (
-            <div className="absolute top-14 left-0 right-0 mt-2 bg-white border border-matcha-100 rounded-2xl shadow-2xl z-20 overflow-y-auto max-h-[260px] overscroll-contain ring-1 ring-black/5 animate-in zoom-in-95 duration-100">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-matcha-100 rounded-2xl shadow-2xl z-20 overflow-y-auto max-h-[320px] overscroll-contain ring-1 ring-black/5 animate-in zoom-in-95 duration-100">
               {searchResults.map(item => (
                 <button
                   type="button"
@@ -554,19 +588,25 @@ export default function App() {
                   className="w-full text-left px-5 py-3 hover:bg-matcha-50 border-b last:border-0 border-matcha-50 flex justify-between items-center group transition-colors"
                 >
                   <div className="flex-1 pr-4">
-                    <div className="font-serif font-bold text-sumi group-hover:text-matcha-700 transition-colors">
-                      {item.isCustom && <Star size={12} className="inline text-sakura-500 mr-1 -mt-0.5 fill-sakura-300" />}
+                    <div className="font-serif font-bold text-sumi group-hover:text-matcha-700 transition-colors flex flex-wrap gap-1 items-center">
+                      {(item.source === 'custom' || item.isCustom) && <Star size={12} className="inline text-sakura-500 fill-sakura-300" />}
                       {item.name}
                     </div>
-                    <div className="text-[11px] text-matcha-400 font-sans mt-0.5 font-bold tracking-wide">
-                      {item.isCustom
-                        ? (item.type === 'recipe' ? <span className="text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded mr-1">🔗 レシピ連動</span> : <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded mr-1">🏷️ 自家製手動</span>)
-                        : null}
-                      {!item.isCustom && `ID: ${item.id} • `}{item.kcal}kcal / 100g
+                    <div className="text-[11px] text-matcha-400 font-sans mt-1 font-bold tracking-wide flex flex-wrap gap-1.5 items-center">
+                      {(item.source === 'custom' || item.isCustom) && (item.type === 'recipe' ? <span className="text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">🔗 レシピ連動</span> : <span className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">🏷️ 自家製手動</span>)}
+                      {(item.source === 'mext' || (!item.isCustom && !item.source && item.id && !item.id.toString().startsWith('maker-'))) && <span className="text-matcha-600 bg-matcha-50 px-1.5 py-0.5 rounded border border-matcha-100">標準</span>}
+                      {(item.source === 'maker' || (item.id && item.id.toString().startsWith('maker-'))) && <span className="text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">商品</span>}
+                      
+                      <span>{!item.isCustom && `ID: ${item.id} • `}{item.kcal}kcal / 100g</span>
+                      
+                      {item.manufacturer && (
+                        <span className="text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded text-[9px]">🏢 {item.manufacturer}</span>
+                      )}
+                      
                       {(() => {
                         const algs = item.allergens || detectAllergensFromText(item.name);
                         return algs.length > 0 ? (
-                          <span className="ml-2 bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-[9px] border border-red-200">
+                          <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-[9px] border border-red-200">
                             アレルギー: {algs.join("・")}
                           </span>
                         ) : null;
@@ -602,9 +642,11 @@ export default function App() {
                 <div key={item.uid} className="bg-white p-4 rounded-2xl border border-matcha-100 shadow-sm flex items-center gap-4 group hover:border-matcha-300 transition-colors">
                   <div className="flex-1">
                     <div className="font-serif font-bold text-sumi text-sm leading-tight mb-1 flex items-center flex-wrap gap-1.5">
-                      <span>
-                        {item.isCustom && <Star size={12} className="inline text-sakura-500 mr-1 -mt-0.5 fill-sakura-300" />}
-                        {item.name}
+                      <span className="flex items-center flex-wrap gap-1">
+                        {(item.source === 'custom' || item.isCustom) && <Star size={12} className="inline text-sakura-500 fill-sakura-300" />}
+                        {(item.source === 'mext' || (!item.isCustom && !item.source && item.id && !item.id.toString().startsWith('maker-'))) && <span className="inline-block text-[10px] text-matcha-600 bg-matcha-50 px-1.5 py-0.5 rounded border border-matcha-100 align-middle">標準</span>}
+                        {(item.source === 'maker' || (item.id && item.id.toString().startsWith('maker-'))) && <span className="inline-block text-[10px] text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 align-middle">商品</span>}
+                        <span>{item.name}</span>
                       </span>
                       {(() => {
                         const algs = item.allergens || detectAllergensFromText(item.name);
@@ -615,7 +657,10 @@ export default function App() {
                         ) : null;
                       })()}
                     </div>
-                    <div className="text-[10px] text-matcha-400 font-sans">たんぱく質:{item.protein} 脂質:{item.fat} 炭水化物:{item.carb}</div>
+                    <div className="text-[10px] text-matcha-400 font-sans">
+                      たんぱく質:{item.protein} 脂質:{item.fat} 炭水化物:{item.carb}
+                      {item.manufacturer && <span className="ml-2">🏢 {item.manufacturer}</span>}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="relative">

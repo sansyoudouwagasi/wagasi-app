@@ -1125,8 +1125,12 @@ export default function App() {
                   <span className="bg-matcha-100 text-matcha-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
                   材料を選ぶ
                 </h4>
-                <div className="bg-white p-4 rounded-2xl shadow-sm border border-matcha-50 text-sm font-sans text-sumi leading-relaxed">
-                  <p>「材料を検索」窓に「小麦粉」等を入力し、リストから追加します。その後、使用するグラム数を入力すると自動的に成分が計算されます。</p>
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-matcha-50 text-sm font-sans text-sumi leading-relaxed space-y-2">
+                  <p>「材料を検索」窓に「小麦粉」等を入力し、リストから追加します。</p>
+                  <p className="text-[12px] bg-matcha-50 p-2 rounded-xl text-matcha-700 font-bold border border-matcha-100">
+                    💡 「すべて」「標準データ」「商品名検索」「マイ材料」のタブを切り替えて、目的のデータを素早く探せます。
+                  </p>
+                  <p>追加後、使用するグラム数を入力すると自動的に成分が計算されます。</p>
                 </div>
               </div>
 

@@ -383,8 +383,8 @@ export default function App() {
     if (searchTab === 'maker') allMatches = allMatches.filter(item => item.source === 'maker');
     if (searchTab === 'custom') allMatches = allMatches.filter(item => item.source === 'custom');
 
-    // 検索候補を最大50件まで取得し、スクロールで確認できるようにする
-    return allMatches.slice(0, 50);
+    // 検索候補を最大100件まで取得し、スクロールで確認できるようにする
+    return allMatches.slice(0, 100);
   }, [search, customIngredients, searchTab]);
 
   const addIngredient = (food) => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, Plus, Trash2, Save, Calculator, BookOpen, Info, FolderOpen, X, Edit3, Star, Droplets, FileDown, HelpCircle, Download, Upload } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 import mextData from "./data/mext_data.json";
 import makerData from "./data/maker_data.json";
 import { expandSearchQuery } from "./utils/searchUtils";
@@ -529,7 +530,7 @@ export default function App() {
         <div className="bg-sakura-50 border border-sakura-200 p-4 rounded-xl flex gap-3 items-start shadow-sm">
           <BookOpen className="text-sakura-500 shrink-0 mt-0.5" size={20} />
           <p className="text-[12px] font-serif text-sumi leading-relaxed">
-            本アプリは<strong className="text-sakura-800">日本食品標準成分表（八訂）</strong>のデータを参照しています。様々な料理や商品の成分計算に対応可能です。
+            本アプリは<strong className="text-sakura-800">日本食品標準成分表（八訂）</strong>のデータを参照しています。��々な料理や商品の成分計算に対応可能です。
           </p>
         </div>
 
@@ -1242,6 +1243,7 @@ export default function App() {
         </div>
       )}
 
+      <Analytics />
     </div>
   );
 }
